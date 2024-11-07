@@ -1,0 +1,227 @@
+package com.devspark.palabra_clara.services;
+
+import com.devspark.palabra_clara.entity.PalabraEntity;
+import com.devspark.palabra_clara.entity.VarianteEntity;
+import com.devspark.palabra_clara.model.PalabraRequestBean;
+import com.devspark.palabra_clara.model.VarianteRequestBean;
+import com.devspark.palabra_clara.repository.PalabraRepository;
+import com.devspark.palabra_clara.repository.VarianteRepository;
+import com.devspark.palabra_clara.util.ConfiguracionesCalidad;
+import com.devspark.palabra_clara.util.GenericResponse;
+import com.devspark.palabra_clara.util.StaticConstants;
+import com.devspark.palabra_clara.util.TraducirPalabras;
+import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+import ws.schild.jave.Encoder;
+import ws.schild.jave.EncoderException;
+import ws.schild.jave.MultimediaObject;
+import ws.schild.jave.encode.EncodingAttributes;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
+
+import static com.devspark.palabra_clara.util.StaticConstants.TEMP_DIR;
+
+@Service
+public class PalabraServiceImpl implements IPalabraService{
+
+    private final PalabraRepository palabraRepository;
+    private final VarianteRepository varianteRepository;
+    private static final Logger logger = LoggerFactory.getLogger(PalabraServiceImpl.class);
+
+    @Autowired
+    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository) {
+        this.palabraRepository = palabraRepository;
+        this.varianteRepository = varianteRepository;
+    }
+
+    @Override
+    public GenericResponse traducirPalabra(String palabra) {
+        Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabra(palabra);
+        TraducirPalabras traducirPalabras = new TraducirPalabras();
+        GenericResponse traduccion = traducirPalabras.traducirTexto(palabra);
+
+        if (palabraEntity.isPresent()) {
+            return buildSuccessResponse(traduccion, palabraEntity.get().getPath());
+        }
+
+        Optional<VarianteEntity> varianteEntity = varianteRepository.findByVariante(palabra);
+
+        if (varianteEntity.isPresent()) {
+            return buildSuccessResponse(traduccion, varianteEntity.get().getPalabra().getPath());
+        }
+
+        return traduccion;
+    }
+
+    private GenericResponse buildSuccessResponse(GenericResponse traduccion, String path) {
+        Map<String, Object> responseMap = new HashMap<>();
+        responseMap.put(StaticConstants.PALABRA_TRADUCCION, traduccion.getRespuesta());
+        responseMap.put(StaticConstants.PALABRA_VIDEO_EXISTE, path != null);
+
+        return new GenericResponse(StaticConstants.CODIGO_OK, StaticConstants.MENSAJE_TRADUCIR_OK, responseMap);
+    }
+
+    @Override
+    public GenericResponse guardarPalabra(PalabraRequestBean palabraRequest, Map<String, MultipartFile> video) {
+        try {
+            if (palabraRequest == null) {
+                throw new IllegalArgumentException(StaticConstants.ERROR_PALABRA_NULL);
+            }
+
+            if (video != null && video.containsKey(StaticConstants.PALABRA_VIDEO)) {
+                palabraRequest.setPath(comprimirVideo(video.get(StaticConstants.PALABRA_VIDEO),ConfiguracionesCalidad.WEBM,palabraRequest));
+            }
+
+            return new GenericResponse(0,StaticConstants.MENSAJE_GUARDAR_PALABRA_OK,palabraRepository.save(beanToEntity(palabraRequest)));
+
+        } catch (IOException | IllegalArgumentException e) {
+            return new GenericResponse(1, StaticConstants.MENSAJE_GUARDAR_PALABRA_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public GenericResponse actualizarPalabra(PalabraRequestBean palabraRequest, Map<String, MultipartFile> video) {
+        try {
+            if (palabraRequest == null) {
+                throw new IllegalArgumentException(StaticConstants.ERROR_PALABRA_NULL);
+            }
+
+            if (video == null || !video.containsKey(StaticConstants.PALABRA_VIDEO)) {
+                throw new IllegalArgumentException(StaticConstants.MENSAJE_VIDEO_NULL);
+            }
+
+            Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabra(beanToEntity(palabraRequest).getPalabra());
+            if (palabraEntity.isPresent()) {
+                PalabraRequestBean palabraRequestBean = entityToBan(palabraEntity);
+                palabraRequestBean.setPath(comprimirVideo(video.get(StaticConstants.PALABRA_VIDEO),ConfiguracionesCalidad.WEBM,palabraRequest));
+                return new GenericResponse(0,StaticConstants.MENSAJE_GUARDAR_PALABRA_OK,palabraRepository.save(beanToEntity(palabraRequestBean)));
+            }
+
+            List<VarianteEntity> variantesEncontradas = new ArrayList<>();
+            for (VarianteRequestBean variante : palabraRequest.getVariantes()) {
+                Optional<VarianteEntity> varianteEntity = varianteRepository.findByVariante(variante.getVariante());
+                if (varianteEntity.isPresent()) {
+                    variantesEncontradas.add(varianteEntity.get());
+                }
+            }
+
+            if (!variantesEncontradas.isEmpty()) {
+                List<VarianteRequestBean> variantesActualizadas = variantesEncontradas.stream()
+                        .map(varianteEntity -> {
+                            VarianteRequestBean varianteRequest = new VarianteRequestBean();
+                            varianteRequest.setVariante(varianteEntity.getVariante());
+                            return varianteRequest;
+                        })
+                        .toList();
+
+                palabraRequest.setVariantes(variantesActualizadas);
+                palabraRequest.setPath(comprimirVideo(video.get(StaticConstants.PALABRA_VIDEO),ConfiguracionesCalidad.WEBM,palabraRequest));
+
+                return new GenericResponse(0,StaticConstants.MENSAJE_GUARDAR_PALABRA_OK,palabraRepository.save(beanToEntity(palabraRequest)));
+            }
+
+            return new GenericResponse(1, StaticConstants.MENSAJE_ACTUALIZAR_PALABRA_ERROR, null);
+
+        } catch (Exception e) {
+            return new GenericResponse(1, StaticConstants.MENSAJE_GUARDAR_PALABRA_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public ResponseEntity<Resource> descargarVideo(String palabra) {
+        try {
+            Optional<PalabraEntity> palabraEntityOpt = palabraRepository.findByPalabra(palabra);
+
+            if (palabraEntityOpt.isPresent()) {
+                String path = palabraEntityOpt.get().getPath();
+                Path fileStorageLocation = Paths.get(path).toAbsolutePath().normalize();
+                Resource resource = new UrlResource(fileStorageLocation.toUri());
+
+                if (resource.exists()) {
+                    String fileName = fileStorageLocation.getFileName().toString();
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.add(HttpHeaders.CONTENT_DISPOSITION, String.format(StaticConstants.CONTENT_DISPOSITION, fileName));
+
+                    return ResponseEntity.ok()
+                            .headers(headers)
+                            .contentLength(resource.contentLength())
+                            .contentType(MediaType.parseMediaType(StaticConstants.TIPO_VIDEO))
+                            .body(resource);
+                } else {
+                    logger.error(StaticConstants.MENSAJE_DESCARGAR_ADVERTENCIA);
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                }
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+            }
+        } catch (Exception e) {
+            logger.error(StaticConstants.MENSAJE_DESCARGAR_ERROR, e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @Override
+    public List<String> obtenerTodasLasPalabras() {
+        return palabraRepository.findAllPalabrasYVariantes();
+    }
+
+    public String comprimirVideo(MultipartFile inputVideo, ConfiguracionesCalidad format, PalabraRequestBean palabra) throws IOException {
+        String outputDirectoryPath = StaticConstants.RUTA_CARPETA_VIDEOS + File.separator + palabra.getPalabra();
+
+        File outputDirectory = new File(outputDirectoryPath);
+        if (!outputDirectory.exists() && !outputDirectory.mkdirs()) {
+            throw new IOException(StaticConstants.ERROR_CREAR_DIRECTORIO + outputDirectoryPath);
+        }
+
+        File source = new File(TEMP_DIR, UUID.randomUUID() + StaticConstants.TERMINACION_TMP);
+        File target = new File(outputDirectoryPath + File.separator + palabra.getPalabra() + StaticConstants.PUNTO_DOT + format.getExtension());
+
+        try {
+            inputVideo.transferTo(source);
+
+            EncodingAttributes attrs = new EncodingAttributes()
+                    .setVideoAttributes(format.getVideoAttributes())
+//                    .setAudioAttributes(format.getAudioAttributes())
+                    .setOutputFormat(format.getExtension());
+
+            new Encoder().encode(new MultimediaObject(source), target, attrs);
+
+            if (!target.exists() || target.length() == 0) {
+                throw new IOException(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO);
+            }
+
+            return target.getAbsolutePath();
+        } catch (EncoderException e) {
+            logger.error(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO, e);
+            return null;
+        } finally {
+            if (source.exists()) {
+                Files.delete(source.toPath());
+            }
+        }
+    }
+
+    private PalabraEntity beanToEntity(PalabraRequestBean palabraRequest) {
+        return new ModelMapper().map(palabraRequest, PalabraEntity.class);
+    }
+
+    private PalabraRequestBean entityToBan(Optional<PalabraEntity> palabraEntity){
+        return new ModelMapper().map(palabraEntity,PalabraRequestBean.class);
+    }
+
+}

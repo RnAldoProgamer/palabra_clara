@@ -10,7 +10,7 @@ import java.util.Optional;
 
 @Repository
 public interface PalabraRepository extends CrudRepository<PalabraEntity, Long> {
-    Optional<PalabraEntity> findByPalabra(String palabra);
+    Optional<PalabraEntity> findByPalabraIgnoreCase(String palabra);
 
     @Query("SELECT DISTINCT p.palabra FROM PalabraEntity p " +
             "UNION " +
@@ -18,4 +18,5 @@ public interface PalabraRepository extends CrudRepository<PalabraEntity, Long> {
             "JOIN p.variantes v " +
             "ORDER BY palabra")
     List<String> findAllPalabrasYVariantes();
+
 }

@@ -15,10 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 @RestController
-@CrossOrigin(origins = "*",
-        allowedHeaders = "*",
-        methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT,
-                RequestMethod.DELETE, RequestMethod.PATCH})
+@CrossOrigin(origins = "*",allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.PATCH})
 public class TraductorController {
 
     private final IPalabraService iPalabraService;
@@ -30,7 +27,7 @@ public class TraductorController {
     @GetMapping("/obtenerPalabras")
     public GenericResponse obtnerPalabras(){
         return ObtenerPalabras.main();
-    }
+        }
 
     @GetMapping("/obtenerPalabrasCaed")
     public List<String> getAllPalabrasAndVariantes() {
@@ -55,5 +52,15 @@ public class TraductorController {
     @GetMapping("/descargarVideo/{palabra}")
     public ResponseEntity<Resource> descargarVideo(@PathVariable String palabra) {
         return iPalabraService.descargarVideo(palabra);
+    }
+
+    @PostMapping("/convertirTextoAVoz")
+    public ResponseEntity<byte[]> convertirTextoAVoz(@RequestBody String palabra) {
+        return iPalabraService.convertirTextoAVoz(palabra);
+    }
+
+    @PostMapping("/traducirPalabraGroq")
+    public GenericResponse traducirPalabraGroq(@RequestBody String palabra) {
+        return iPalabraService.traducirPalabraGroq(palabra);
     }
 }

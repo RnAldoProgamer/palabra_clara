@@ -1,8 +1,11 @@
 package com.devspark.palabra_clara.services;
 
+import com.devspark.palabra_clara.component.TextoVozComponent;
+import com.devspark.palabra_clara.component.TraducirPalabraComponent;
 import com.devspark.palabra_clara.entity.PalabraEntity;
 import com.devspark.palabra_clara.entity.VarianteEntity;
 import com.devspark.palabra_clara.model.PalabraRequestBean;
+import com.devspark.palabra_clara.model.TraduccionPathResponseBean;
 import com.devspark.palabra_clara.model.VarianteRequestBean;
 import com.devspark.palabra_clara.repository.PalabraRepository;
 import com.devspark.palabra_clara.repository.VarianteRepository;
@@ -41,17 +44,21 @@ public class PalabraServiceImpl implements IPalabraService{
 
     private final PalabraRepository palabraRepository;
     private final VarianteRepository varianteRepository;
+    private final TextoVozComponent textoVozComponent;
+    private final TraducirPalabraComponent traducirPalabraComponent;
     private static final Logger logger = LoggerFactory.getLogger(PalabraServiceImpl.class);
 
     @Autowired
-    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository) {
+    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent) {
         this.palabraRepository = palabraRepository;
         this.varianteRepository = varianteRepository;
+        this.textoVozComponent = textoVozComponent;
+        this.traducirPalabraComponent = traducirPalabraComponent;
     }
 
     @Override
     public GenericResponse traducirPalabra(String palabra) {
-        Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabra(palabra);
+        Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabraIgnoreCase(palabra);
         TraducirPalabras traducirPalabras = new TraducirPalabras();
         GenericResponse traduccion = traducirPalabras.traducirTexto(palabra);
 
@@ -59,13 +66,31 @@ public class PalabraServiceImpl implements IPalabraService{
             return buildSuccessResponse(traduccion, palabraEntity.get().getPath());
         }
 
-        Optional<VarianteEntity> varianteEntity = varianteRepository.findByVariante(palabra);
+        Optional<VarianteEntity> varianteEntity = varianteRepository.findByVarianteIgnoreCase(palabra);
 
         if (varianteEntity.isPresent()) {
             return buildSuccessResponse(traduccion, varianteEntity.get().getPalabra().getPath());
         }
 
         return traduccion;
+    }
+
+    public GenericResponse traducirPalabraGroq(String palabra) {
+        try {
+        Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabraIgnoreCase(palabra);
+        String respuesta = traducirPalabraComponent.traducirPalabra(palabra);
+        if (palabraEntity.isPresent()) {
+            return new GenericResponse(0, StaticConstants.MENSAJE_TRADUCIR_OK, new TraduccionPathResponseBean(palabraEntity.get().getPath() != null, respuesta));
+        }
+
+        Optional<VarianteEntity> varianteEntity = varianteRepository.findByVarianteIgnoreCase(palabra);
+        if (varianteEntity.isPresent()) {
+            return new GenericResponse(0, StaticConstants.MENSAJE_TRADUCIR_OK, new TraduccionPathResponseBean(varianteEntity.get().getPalabra().getPath() != null, respuesta));
+        }
+        return new GenericResponse(0, StaticConstants.MENSAJE_TRADUCIR_OK, new TraduccionPathResponseBean(false, respuesta));
+        } catch (Exception e) {
+            return new GenericResponse(1, StaticConstants.MENSAJE_TRADUCIR_ERROR, e.getMessage());
+        }
     }
 
     private GenericResponse buildSuccessResponse(GenericResponse traduccion, String path) {
@@ -105,7 +130,7 @@ public class PalabraServiceImpl implements IPalabraService{
                 throw new IllegalArgumentException(StaticConstants.MENSAJE_VIDEO_NULL);
             }
 
-            Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabra(beanToEntity(palabraRequest).getPalabra());
+            Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabraIgnoreCase(beanToEntity(palabraRequest).getPalabra());
             if (palabraEntity.isPresent()) {
                 PalabraRequestBean palabraRequestBean = entityToBan(palabraEntity);
                 palabraRequestBean.setPath(comprimirVideo(video.get(StaticConstants.PALABRA_VIDEO),ConfiguracionesCalidad.WEBM,palabraRequest));
@@ -114,7 +139,7 @@ public class PalabraServiceImpl implements IPalabraService{
 
             List<VarianteEntity> variantesEncontradas = new ArrayList<>();
             for (VarianteRequestBean variante : palabraRequest.getVariantes()) {
-                Optional<VarianteEntity> varianteEntity = varianteRepository.findByVariante(variante.getVariante());
+                Optional<VarianteEntity> varianteEntity = varianteRepository.findByVarianteIgnoreCase(variante.getVariante());
                 if (varianteEntity.isPresent()) {
                     variantesEncontradas.add(varianteEntity.get());
                 }
@@ -145,7 +170,7 @@ public class PalabraServiceImpl implements IPalabraService{
     @Override
     public ResponseEntity<Resource> descargarVideo(String palabra) {
         try {
-            Optional<PalabraEntity> palabraEntityOpt = palabraRepository.findByPalabra(palabra);
+            Optional<PalabraEntity> palabraEntityOpt = palabraRepository.findByPalabraIgnoreCase(palabra);
 
             if (palabraEntityOpt.isPresent()) {
                 String path = palabraEntityOpt.get().getPath();
@@ -178,6 +203,11 @@ public class PalabraServiceImpl implements IPalabraService{
     @Override
     public List<String> obtenerTodasLasPalabras() {
         return palabraRepository.findAllPalabrasYVariantes();
+    }
+
+    @Override
+    public ResponseEntity<byte[]> convertirTextoAVoz(String palabra) {
+        return textoVozComponent.textoVoz(palabra);
     }
 
     public String comprimirVideo(MultipartFile inputVideo, ConfiguracionesCalidad format, PalabraRequestBean palabra) throws IOException {

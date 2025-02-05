@@ -9,6 +9,7 @@ import ws.schild.jave.info.VideoSize;
 public enum ConfiguracionesCalidad {
         MP4(createMP4VideoAttributos(), createMP4AudioAttributos(), StaticConstants.TIPO_EXTENSION_MP4),
         WEBM(createWebMVideoAttributos(), createWebMAudioAttributos(), StaticConstants.TIPO_EXTENSION_WEBM),
+        WEBM_HORIZONTAL(createWebMVideoHorizontalAttributes(), createWebMAudioAttributos(), StaticConstants.TIPO_EXTENSION_WEBM),
         LOW_QUALITY_MP4(createLowQualityVideoAttributos(), createLowQualityAudioAttributos(), StaticConstants.TIPO_EXTENSION_MP4),
         HD_MP4(createHDVideoAttributos(), createHDAudioAttributos(), StaticConstants.TIPO_EXTENSION_MP4);
 
@@ -47,6 +48,15 @@ public enum ConfiguracionesCalidad {
             attrs.setBitRate(500_000);
             attrs.setFrameRate(30);
             attrs.setSize(new VideoSize(1280, 720));
+            return attrs;
+        }
+
+        private static VideoAttributes createWebMVideoHorizontalAttributes() {
+            VideoAttributes attrs = new VideoAttributes();
+            attrs.setCodec(StaticConstants.CODEC_WEBM);
+            attrs.setBitRate(500_000);
+            attrs.setFrameRate(30);
+            attrs.setSize(new VideoSize(720, 1280));
             return attrs;
         }
 

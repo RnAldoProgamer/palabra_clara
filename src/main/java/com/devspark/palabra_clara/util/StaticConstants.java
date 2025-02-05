@@ -31,6 +31,7 @@ public class StaticConstants {
     */
 
     public static final List<String> IDIOMAS = Collections.unmodifiableList(Arrays.asList("en", "fr", "de"));
+    public static final List<String> IDIOMAS_EXP = Collections.unmodifiableList(Arrays.asList("en", "fr", "ita"));
     public static final String URL = "https://openl-translate.p.rapidapi.com/translate";
     public static final String FORMATO_BODY_REQUEST = "\"{\\\"target_lang\\\":\\\"%s\\\",\\\"text\\\":\\\"%s\\\"}\"";
     public static final String API = "x-rapidapi-key";
@@ -115,14 +116,9 @@ public class StaticConstants {
     public static final String CODEC_WEBM = "libvpx";
     public static final String CODEC_LOW_QUALITY_MP4 = "libx264";
     public static final String CODEC_HD_MP4 = "libx264";
-    public static final String CODEC_HD_WEBM = "libvpx";
-    public static final String CODEC_LOW_QUALITY_WEBM = "libvpx";
-    public static final String CODEC_LOW_QUALITY_HD_MP4 = "libx264";
-    public static final String CODEC_LOW_QUALITY_HD_WEBM = "libvpx";
     public static final String CODEC_AUDIO_MP4 = "aac";
     public static final String CODEC_AUDIO_WEBM = "libvorbis";
     public static final String CODEC_AUDIO_LOW_QUALITY_MP4 = "aac";
-    public static final String CODEC_AUDIO_LOW_QUALITY_WEBM = "libvorbis";
     public static final String TIPO_EXTENSION_MP4 = "mp4";
     public static final String TIPO_EXTENSION_WEBM = "webm";
 

@@ -22,4 +22,8 @@ public interface IPalabraService {
     GenericResponse actualizarPalabra(PalabraRequestBean palabraRequestBean, Map<String, MultipartFile> video) throws EncoderException, IOException;
 
     List<String> obtenerTodasLasPalabras();
+
+    ResponseEntity<byte[]> convertirTextoAVoz(String palabra);
+
+    GenericResponse traducirPalabraGroq(String palabra);
 }

@@ -4,7 +4,7 @@
 #EXPOSE $PORT
 #ENTRYPOINT ["java", "-jar", "sistema-censo.jar", "--server.port=${PORT}"]
 # ---- Etapa de construcción (Build) ----
-FROM maven:3.8.6-openjdk-21-slim AS build
+FROM maven:3.8.6-eclipse-temurin-21 AS build
 WORKDIR /app
 
 # Copiar el código fuente y el pom.xml
@@ -21,8 +21,8 @@ WORKDIR /app
 # Copiar el JAR desde la etapa de construcción
 COPY --from=build /app/target/*.jar ./app.jar
 
-# Exponer el puerto (por defecto Spring Boot usa 8080)
+# Exponer el puerto
 EXPOSE 8080
 
-# Comando para ejecutar la aplicación
-ENTRYPOINT ["java", "-jar", "palabra_clara.jar"]
+# Comando para ejecutar la aplicación (corregir nombre del JAR)
+ENTRYPOINT ["java", "-jar", "app.jar"]

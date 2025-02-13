@@ -1,6 +1,7 @@
 package com.devspark.palabra_clara.services;
 
 import com.devspark.palabra_clara.component.TextoVozComponent;
+import com.devspark.palabra_clara.component.TraducirBraileComponent;
 import com.devspark.palabra_clara.component.TraducirPalabraComponent;
 import com.devspark.palabra_clara.entity.PalabraEntity;
 import com.devspark.palabra_clara.entity.VarianteEntity;
@@ -47,13 +48,15 @@ public class PalabraServiceImpl implements IPalabraService{
     private final TextoVozComponent textoVozComponent;
     private final TraducirPalabraComponent traducirPalabraComponent;
     private static final Logger logger = LoggerFactory.getLogger(PalabraServiceImpl.class);
+    private final TraducirBraileComponent traducirBraileComponent;
 
     @Autowired
-    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent) {
+    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent, TraducirBraileComponent traducirBraileComponent) {
         this.palabraRepository = palabraRepository;
         this.varianteRepository = varianteRepository;
         this.textoVozComponent = textoVozComponent;
         this.traducirPalabraComponent = traducirPalabraComponent;
+        this.traducirBraileComponent = traducirBraileComponent;
     }
 
     @Override
@@ -88,6 +91,16 @@ public class PalabraServiceImpl implements IPalabraService{
             return new GenericResponse(0, StaticConstants.MENSAJE_TRADUCIR_OK, new TraduccionPathResponseBean(varianteEntity.get().getPalabra().getPath() != null, respuesta));
         }
         return new GenericResponse(0, StaticConstants.MENSAJE_TRADUCIR_OK, new TraduccionPathResponseBean(false, respuesta));
+        } catch (Exception e) {
+            return new GenericResponse(1, StaticConstants.MENSAJE_TRADUCIR_ERROR, e.getMessage());
+        }
+    }
+
+    @Override
+    public GenericResponse traducirBraile(String texto) {
+        try {
+            String respuesta = traducirBraileComponent.traducirBraile(texto);
+            return new GenericResponse(0, StaticConstants.MENSAJE_TRADUCIR_OK, respuesta);
         } catch (Exception e) {
             return new GenericResponse(1, StaticConstants.MENSAJE_TRADUCIR_ERROR, e.getMessage());
         }

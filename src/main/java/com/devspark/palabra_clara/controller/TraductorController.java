@@ -63,4 +63,9 @@ public class TraductorController {
     public GenericResponse traducirPalabraGroq(@RequestBody String palabra) {
         return iPalabraService.traducirPalabraGroq(palabra);
     }
+
+    @PostMapping("traducir/braile")
+    public GenericResponse traducirBraile(@RequestBody String texto){
+        return iPalabraService.traducirBraile(texto);
+    }
 }

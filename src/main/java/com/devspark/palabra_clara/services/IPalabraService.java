@@ -26,4 +26,6 @@ public interface IPalabraService {
     ResponseEntity<byte[]> convertirTextoAVoz(String palabra);
 
     GenericResponse traducirPalabraGroq(String palabra);
+
+    GenericResponse traducirBraile(String texto);
 }

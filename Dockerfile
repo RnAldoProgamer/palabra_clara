@@ -5,33 +5,21 @@
 #ENTRYPOINT ["java", "-jar", "sistema-censo.jar", "--server.port=${PORT}"]
 # ---- Etapa de construcción (Build) ----
 # ---- Etapa de construcción (Build) ----
-FROM eclipse-temurin:21-jdk-jammy AS build
+# Etapa 1: Construcción de la aplicación con Maven y Java 21
+FROM maven:3.9.2-eclipse-temurin-21 AS build
 WORKDIR /app
-
-# Instalar Maven manualmente
-RUN apt-get update && \
-    apt-get install -y curl && \
-    curl -sL https://dlcdn.apache.org/maven/maven-3/3.8.6/binaries/apache-maven-3.8.6-bin.tar.gz -o maven.tar.gz && \
-    mkdir -p /opt/maven && \
-    tar -xzf maven.tar.gz -C /opt/maven --strip-components=1 && \
-    ln -s /opt/maven/bin/mvn /usr/bin/mvn && \
-    rm maven.tar.gz
-
-# Copiar el código fuente
+# Copia los archivos de configuración y el código fuente
 COPY pom.xml .
-COPY src ./src
-
-# Compilar el proyecto
+COPY src/ ./src/
+# Empaqueta la aplicación (se generará el archivo .jar en target/)
 RUN mvn clean package -DskipTests
 
-# ---- Etapa de ejecución (Runtime) ----
-FROM eclipse-temurin:21-jre-jammy
+# Etapa 2: Creación de la imagen final para ejecutar la aplicación
+FROM openjdk:21-jdk-slim
 WORKDIR /app
-
-# Copiar el JAR compilado
-COPY --from=build /app/target/*.jar ./app.jar
-
+# Copia el JAR generado en la etapa de construcción
+COPY --from=build /app/target/*.jar app.jar
+# Expone el puerto 8080 (ajusta si tu aplicación utiliza otro puerto)
 EXPOSE 8080
-
-# Ejecutar la aplicación
+# Comando para iniciar la aplicación
 ENTRYPOINT ["java", "-jar", "app.jar"]

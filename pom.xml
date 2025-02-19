@@ -65,6 +65,11 @@
 			<version>3.2.0</version>
 		</dependency>
 		<dependency>
+			<groupId>com.amazonaws</groupId>
+			<artifactId>aws-java-sdk</artifactId>
+			<version>1.12.781</version>
+		</dependency>
+		<dependency>
 			<groupId>ws.schild</groupId>
 			<artifactId>jave-core</artifactId>
 			<version>3.5.0</version>
@@ -94,6 +99,15 @@
 							<artifactId>lombok</artifactId>
 						</exclude>
 					</excludes>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>22</source>
+					<target>22</target>
+					<compilerArgs>--enable-preview</compilerArgs>
 				</configuration>
 			</plugin>
 		</plugins>

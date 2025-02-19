@@ -1,10 +1,12 @@
 package com.devspark.palabra_clara.util;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class StaticConstants {
+
     private StaticConstants (){
         throw new IllegalStateException("Utility class");
     }
@@ -57,6 +59,7 @@ public class StaticConstants {
     public static final String ERROR_CREAR_DIRECTORIO = "No se pudo crear el directorio de salida: ";
     public static final String TERMINACION_TMP = ".tmp";
     public static final String TEMP_DIR = System.getProperty("java.io.tmpdir");
+    public static final String RUTA_CARPETA_TEMPORAL = System.getProperty("java.io.tmpdir") + File.separator + "videosTemp";
     public static final String PUNTO_DOT = ".";
     public static final String MENSAJE_ERROR_COMPRIMIR_VIDEO = "Error al comprimir el video";
 
@@ -121,6 +124,16 @@ public class StaticConstants {
     public static final String CODEC_AUDIO_LOW_QUALITY_MP4 = "aac";
     public static final String TIPO_EXTENSION_MP4 = "mp4";
     public static final String TIPO_EXTENSION_WEBM = "webm";
+
+
+    /*
+    * Configuracion de Supabase
+    */
+    public static final String SUPABASE_PROJECT_REF = "palabra_clara";
+    public static final String SUPABASE_BUCKET = "videos palabra clara";
+    public static final String SUPABASE_URL = "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/s3";
+    public static final String SUPABASE_SECRET_ACCESS_KEY = "c931b31ceb9a773512ca9465136305890d001abf672dc1e9499f9d201b80b1eb";
+    public static final String SUPABASE_ACCESS_KEY_ID = "041a0f52ed515d9d2f7002aaf2a25cf9";
 
     /*
     * Constructores Constantes

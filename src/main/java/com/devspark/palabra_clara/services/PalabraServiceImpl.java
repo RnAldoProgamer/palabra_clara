@@ -1,5 +1,11 @@
 package com.devspark.palabra_clara.services;
 
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.client.builder.AwsClientBuilder;
+import com.amazonaws.services.s3.AmazonS3;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
+import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.devspark.palabra_clara.component.TextoVozComponent;
 import com.devspark.palabra_clara.component.TraducirBraileComponent;
 import com.devspark.palabra_clara.component.TraducirPalabraComponent;
@@ -20,11 +26,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import ws.schild.jave.Encoder;
 import ws.schild.jave.EncoderException;
@@ -218,29 +222,25 @@ public class PalabraServiceImpl implements IPalabraService{
         return palabraRepository.findAllPalabrasYVariantes();
     }
 
-    @Override
-    public ResponseEntity<byte[]> convertirTextoAVoz(String palabra) {
-        return textoVozComponent.textoVoz(palabra);
-    }
-
     public String comprimirVideo(MultipartFile inputVideo, ConfiguracionesCalidad format, PalabraRequestBean palabra) throws IOException {
-        String outputDirectoryPath = StaticConstants.RUTA_CARPETA_VIDEOS + File.separator + palabra.getPalabra();
-
-        File outputDirectory = new File(outputDirectoryPath);
-        if (!outputDirectory.exists() && !outputDirectory.mkdirs()) {
-            throw new IOException(StaticConstants.ERROR_CREAR_DIRECTORIO + outputDirectoryPath);
+        // Usamos un directorio temporal para almacenar el video comprimido
+        String tempDirectoryPath = StaticConstants.RUTA_CARPETA_TEMPORAL; // Define un directorio temporal
+        File tempDirectory = new File(tempDirectoryPath);
+        if (!tempDirectory.exists() && !tempDirectory.mkdirs()) {
+            throw new IOException(StaticConstants.ERROR_CREAR_DIRECTORIO + tempDirectoryPath);
         }
 
-        File source = new File(TEMP_DIR, UUID.randomUUID() + StaticConstants.TERMINACION_TMP);
-        File target = new File(outputDirectoryPath + File.separator + palabra.getPalabra() + StaticConstants.PUNTO_DOT + format.getExtension());
+        // Archivo temporal para el proceso
+        File source = new File(StaticConstants.TEMP_DIR, UUID.randomUUID() + StaticConstants.TERMINACION_TMP);
+        String fileName = palabra.getPalabra() + StaticConstants.PUNTO_DOT + format.getExtension();
+        File target = new File(tempDirectoryPath + File.separator + fileName);
 
         try {
             inputVideo.transferTo(source);
 
             EncodingAttributes attrs = new EncodingAttributes()
-                    .setVideoAttributes(format.getVideoAttributes())
-//                    .setAudioAttributes(format.getAudioAttributes())
-                    .setOutputFormat(format.getExtension());
+                .setVideoAttributes(format.getVideoAttributes())
+                .setOutputFormat(format.getExtension());
 
             new Encoder().encode(new MultimediaObject(source), target, attrs);
 
@@ -248,7 +248,10 @@ public class PalabraServiceImpl implements IPalabraService{
                 throw new IOException(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO);
             }
 
-            return target.getAbsolutePath();
+            // Sube el archivo a Supabase mediante S3 y retorna la URL
+            String uploadedUrl = uploadFileToSupabaseS3(target, fileName);
+            return uploadedUrl;
+
         } catch (EncoderException e) {
             logger.error(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO, e);
             return null;
@@ -256,7 +259,45 @@ public class PalabraServiceImpl implements IPalabraService{
             if (source.exists()) {
                 Files.delete(source.toPath());
             }
+            // Opcional: eliminar el archivo comprimido después de subirlo
+            if (target.exists()) {
+                Files.delete(target.toPath());
+            }
         }
+    }
+
+    private String uploadFileToSupabaseS3(File file, String fileName) throws IOException {
+        AmazonS3 s3Client = createS3ClientComponent();
+        String bucketName = StaticConstants.SUPABASE_BUCKET; // Define tu bucket en las constantes
+
+        // Sube el archivo al bucket
+        s3Client.putObject(new PutObjectRequest(bucketName, fileName, file));
+
+        // Obtén la URL del objeto subido
+        return s3Client.getUrl(bucketName, fileName).toString();
+    }
+
+    private AmazonS3 createS3ClientComponent() {
+        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
+            StaticConstants.SUPABASE_ACCESS_KEY_ID,
+            StaticConstants.SUPABASE_SECRET_ACCESS_KEY
+        );
+
+        return AmazonS3ClientBuilder.standard()
+            .withEndpointConfiguration(
+                new AwsClientBuilder.EndpointConfiguration(
+                    "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/s3",
+                    "us-west-1" // Generalmente se usa esta región; verifica con tu configuración
+                )
+            )
+            .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
+            .withPathStyleAccessEnabled(true) // Es importante para endpoints personalizados
+            .build();
+    }
+
+    @Override
+    public ResponseEntity<byte[]> convertirTextoAVoz(String palabra) {
+        return textoVozComponent.textoVoz(palabra);
     }
 
     private PalabraEntity beanToEntity(PalabraRequestBean palabraRequest) {

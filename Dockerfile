@@ -7,6 +7,9 @@
 FROM openjdk:21-slim AS build
 WORKDIR /app
 
+ENV LANG C.UTF-8
+ENV LC_ALL C.UTF-8
+
 # Variables para Maven
 ARG MAVEN_VERSION=3.9.2
 ARG MAVEN_BASE_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries

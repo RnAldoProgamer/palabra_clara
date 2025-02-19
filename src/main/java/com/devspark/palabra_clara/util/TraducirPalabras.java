@@ -2,8 +2,6 @@ package com.devspark.palabra_clara.util;
 
 import com.devspark.palabra_clara.model.TraduccionResponseBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.cdimascio.dotenv.Dotenv;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -18,16 +16,9 @@ import java.util.Map;
 @Component
 public class TraducirPalabras {
 
-    private Dotenv dotenv;
-
-    @Autowired
-    public TraducirPalabras() {
-        this.dotenv = Dotenv.configure().load();
-    }
-
     public GenericResponse traducirTexto(String texto) {
         HttpHeaders headers = new HttpHeaders();
-        headers.set(StaticConstants.API, dotenv.get("API_KEY"));
+        headers.set(StaticConstants.API, StaticConstants.API_KEY_GROQ);
         headers.set(StaticConstants.API_HOST, StaticConstants.API_HOST_KEY);
         headers.set(StaticConstants.CONTENT_TYPE, StaticConstants.CONTENT_TYPE_VALUE);
 

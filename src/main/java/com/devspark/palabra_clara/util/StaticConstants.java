@@ -41,6 +41,7 @@ public class StaticConstants {
     public static final String API_HOST_KEY = "openl-translate.p.rapidapi.com";
     public static final String CONTENT_TYPE = "Content-Type";
     public static final String CONTENT_TYPE_VALUE = "application/json";
+    public static final String API_KEY_GROQ = "085f755233msh590df525c96d6f1p11c420jsn20dd0ecad9b8";
 
 
     /*

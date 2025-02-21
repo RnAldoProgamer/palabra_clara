@@ -81,11 +81,6 @@
 			<artifactId>jave-nativebin-win64</artifactId>
 			<version>3.5.0</version>
 		</dependency>
-		<dependency>
-			<groupId>io.github.cdimascio</groupId>
-			<artifactId>java-dotenv</artifactId>
-			<version>5.2.2</version>
-		</dependency>
 
 	</dependencies>
 

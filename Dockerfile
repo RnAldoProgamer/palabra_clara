@@ -34,9 +34,12 @@ RUN mvn clean package -DskipTests
 FROM openjdk:21-jdk-slim
 WORKDIR /app
 
-# Instalar FFmpeg en la imagen final
+# Instalar FFmpeg con todas las dependencias y limpiar
 RUN apt-get update && \
-    apt-get install -y ffmpeg && \
+    apt-get install -y ffmpeg \
+        libavcodec-extra \
+        libavdevice58 \
+        libpostproc55 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

@@ -32,6 +32,7 @@ import ws.schild.jave.Encoder;
 import ws.schild.jave.EncoderException;
 import ws.schild.jave.MultimediaObject;
 import ws.schild.jave.encode.EncodingAttributes;
+import ws.schild.jave.process.ffmpeg.DefaultFFMPEGLocator;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,14 +50,16 @@ public class PalabraServiceImpl implements IPalabraService{
     private final TraducirPalabraComponent traducirPalabraComponent;
     private static final Logger logger = LoggerFactory.getLogger(PalabraServiceImpl.class);
     private final TraducirBraileComponent traducirBraileComponent;
+    private final Encoder ffmpegEncoder;
 
     @Autowired
-    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent, TraducirBraileComponent traducirBraileComponent) {
+    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent, TraducirBraileComponent traducirBraileComponent, Encoder ffmpegEncoder) {
         this.palabraRepository = palabraRepository;
         this.varianteRepository = varianteRepository;
         this.textoVozComponent = textoVozComponent;
         this.traducirPalabraComponent = traducirPalabraComponent;
         this.traducirBraileComponent = traducirBraileComponent;
+        this.ffmpegEncoder = ffmpegEncoder;
     }
 
     public GenericResponse traducirPalabraGroq(String palabra) {
@@ -199,15 +202,14 @@ public class PalabraServiceImpl implements IPalabraService{
 //    Funciones de Ayuda
 
     public String comprimirVideo(MultipartFile inputVideo, ConfiguracionesCalidad format, PalabraRequestBean palabra) throws IOException {
-        // Usamos un directorio temporal para almacenar el video comprimido
-        String tempDirectoryPath = StaticConstants.RUTA_CARPETA_TEMPORAL; // Define un directorio temporal
+        String tempDirectoryPath = StaticConstants.RUTA_CARPETA_TEMPORAL;
         File tempDirectory = new File(tempDirectoryPath);
+
         if (!tempDirectory.exists() && !tempDirectory.mkdirs()) {
             throw new IOException(StaticConstants.ERROR_CREAR_DIRECTORIO + tempDirectoryPath);
         }
 
-        // Archivo temporal para el proceso
-        File source = new File(StaticConstants.TEMP_DIR, UUID.randomUUID() + StaticConstants.TERMINACION_TMP);
+        File source = File.createTempFile("video_", StaticConstants.TERMINACION_TMP);
         String fileName = palabra.getPalabra() + StaticConstants.PUNTO_DOT + format.getExtension();
         File target = new File(tempDirectoryPath + File.separator + fileName);
 
@@ -218,27 +220,31 @@ public class PalabraServiceImpl implements IPalabraService{
                 .setVideoAttributes(format.getVideoAttributes())
                 .setOutputFormat(format.getExtension());
 
-            new Encoder().encode(new MultimediaObject(source), target, attrs);
+            // Usamos el encoder inyectado
+            ffmpegEncoder.encode(new MultimediaObject(source), target, attrs);
 
             if (!target.exists() || target.length() == 0) {
                 throw new IOException(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO);
             }
 
-            // Sube el archivo a Supabase mediante S3 y retorna la URL
-            String uploadedUrl = uploadFileToSupabaseS3(target, fileName);
-            return uploadedUrl;
+            return uploadFileToSupabaseS3(target, fileName);
 
         } catch (EncoderException e) {
             logger.error(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO, e);
-            return null;
+            throw new IOException("Error en la compresión: " + e.getMessage());
         } finally {
-            if (source.exists()) {
-                Files.delete(source.toPath());
+            cleanTempFile(source);
+            cleanTempFile(target);
+        }
+    }
+
+    private void cleanTempFile(File file) {
+        try {
+            if (file != null && file.exists()) {
+                Files.delete(file.toPath());
             }
-            // Opcional: eliminar el archivo comprimido después de subirlo
-            if (target.exists()) {
-                Files.delete(target.toPath());
-            }
+        } catch (IOException e) {
+            logger.warn("Error eliminando temporal: {}", file.getAbsolutePath(), e);
         }
     }
 

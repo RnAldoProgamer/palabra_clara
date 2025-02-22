@@ -1,8 +1,10 @@
 package com.devspark.palabra_clara.config;
 
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import ws.schild.jave.Encoder;
 
 @Configuration
 public class CorsConfig implements WebMvcConfigurer {
@@ -14,5 +16,12 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowedHeaders("*")
                 .allowCredentials(false)
                 .maxAge(3600);
+    }
+
+    @Bean
+    public Encoder ffmpegEncoder() {
+        // Configuración manual para usar FFmpeg del sistema
+        System.setProperty("jave.ffmpeg.path", "/usr/bin/ffmpeg");
+        return new Encoder();
     }
 }

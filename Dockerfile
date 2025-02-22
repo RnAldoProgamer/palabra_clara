@@ -34,12 +34,12 @@ RUN mvn clean package -DskipTests
 FROM openjdk:21-jdk-slim
 WORKDIR /app
 
-# Instalar FFmpeg con todas las dependencias y limpiar
+# Instalar FFmpeg con dependencias ACTUALIZADAS para Debian 12
 RUN apt-get update && \
     apt-get install -y ffmpeg \
         libavcodec-extra \
-        libavdevice58 \
-        libpostproc55 && \
+        libavdevice59 \          # Versión actualizada
+        libpostproc56 && \       # Versión actualizada
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

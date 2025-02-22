@@ -19,7 +19,6 @@ import com.devspark.palabra_clara.repository.VarianteRepository;
 import com.devspark.palabra_clara.util.ConfiguracionesCalidad;
 import com.devspark.palabra_clara.util.GenericResponse;
 import com.devspark.palabra_clara.util.StaticConstants;
-import com.devspark.palabra_clara.util.TraducirPalabras;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +27,6 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import ws.schild.jave.Encoder;
 import ws.schild.jave.EncoderException;
@@ -41,8 +39,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-
-import static com.devspark.palabra_clara.util.StaticConstants.TEMP_DIR;
 
 @Service
 public class PalabraServiceImpl implements IPalabraService{
@@ -61,25 +57,6 @@ public class PalabraServiceImpl implements IPalabraService{
         this.textoVozComponent = textoVozComponent;
         this.traducirPalabraComponent = traducirPalabraComponent;
         this.traducirBraileComponent = traducirBraileComponent;
-    }
-
-    @Override
-    public GenericResponse traducirPalabra(String palabra) {
-        Optional<PalabraEntity> palabraEntity = palabraRepository.findByPalabraIgnoreCase(palabra);
-        TraducirPalabras traducirPalabras = new TraducirPalabras();
-        GenericResponse traduccion = traducirPalabras.traducirTexto(palabra);
-
-        if (palabraEntity.isPresent()) {
-            return buildSuccessResponse(traduccion, palabraEntity.get().getPath());
-        }
-
-        Optional<VarianteEntity> varianteEntity = varianteRepository.findByVarianteIgnoreCase(palabra);
-
-        if (varianteEntity.isPresent()) {
-            return buildSuccessResponse(traduccion, varianteEntity.get().getPalabra().getPath());
-        }
-
-        return traduccion;
     }
 
     public GenericResponse traducirPalabraGroq(String palabra) {
@@ -108,14 +85,6 @@ public class PalabraServiceImpl implements IPalabraService{
         } catch (Exception e) {
             return new GenericResponse(1, StaticConstants.MENSAJE_TRADUCIR_ERROR, e.getMessage());
         }
-    }
-
-    private GenericResponse buildSuccessResponse(GenericResponse traduccion, String path) {
-        Map<String, Object> responseMap = new HashMap<>();
-        responseMap.put(StaticConstants.PALABRA_TRADUCCION, traduccion.getRespuesta());
-        responseMap.put(StaticConstants.PALABRA_VIDEO_EXISTE, path != null);
-
-        return new GenericResponse(StaticConstants.CODIGO_OK, StaticConstants.MENSAJE_TRADUCIR_OK, responseMap);
     }
 
     @Override
@@ -222,6 +191,13 @@ public class PalabraServiceImpl implements IPalabraService{
         return palabraRepository.findAllPalabrasYVariantes();
     }
 
+    @Override
+    public ResponseEntity<byte[]> convertirTextoAVoz(String palabra) {
+        return textoVozComponent.textoVoz(palabra);
+    }
+
+//    Funciones de Ayuda
+
     public String comprimirVideo(MultipartFile inputVideo, ConfiguracionesCalidad format, PalabraRequestBean palabra) throws IOException {
         // Usamos un directorio temporal para almacenar el video comprimido
         String tempDirectoryPath = StaticConstants.RUTA_CARPETA_TEMPORAL; // Define un directorio temporal
@@ -293,11 +269,6 @@ public class PalabraServiceImpl implements IPalabraService{
             .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
             .withPathStyleAccessEnabled(true) // Es importante para endpoints personalizados
             .build();
-    }
-
-    @Override
-    public ResponseEntity<byte[]> convertirTextoAVoz(String palabra) {
-        return textoVozComponent.textoVoz(palabra);
     }
 
     private PalabraEntity beanToEntity(PalabraRequestBean palabraRequest) {

@@ -30,9 +30,16 @@ COPY pom.xml .
 COPY src/ ./src/
 RUN mvn clean package -DskipTests
 
-# Etapa final: imagen de ejecución con OpenJDK 21
+# Etapa final: imagen de ejecución con OpenJDK 21 y FFmpeg
 FROM openjdk:21-jdk-slim
 WORKDIR /app
+
+# Instalar FFmpeg en la imagen final
+RUN apt-get update && \
+    apt-get install -y ffmpeg && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]

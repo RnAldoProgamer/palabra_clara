@@ -34,11 +34,6 @@ public class TraductorController {
         return iPalabraService.obtenerTodasLasPalabras();
     }
 
-    @GetMapping("/traducir/{texto}")
-    public GenericResponse traducirPalabras(@PathVariable String texto){
-        return iPalabraService.traducirPalabra(texto);
-    }
-
     @PostMapping("guardar/palabra")
     public GenericResponse guardarPalabra(@ModelAttribute PalabraRequestBean palabraRequest, @RequestParam Map<String, MultipartFile> video) throws EncoderException, IOException {
         return iPalabraService.guardarPalabra(palabraRequest, video);

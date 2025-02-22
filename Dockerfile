@@ -38,8 +38,8 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y ffmpeg \
         libavcodec-extra \
-        libavdevice59 \          # Versión actualizada
-        libpostproc56 && \       # Versión actualizada
+        libavdevice59 \
+        libpostproc56 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

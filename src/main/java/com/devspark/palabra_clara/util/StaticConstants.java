@@ -131,7 +131,7 @@ public class StaticConstants {
     * Configuracion de Supabase
     */
     public static final String SUPABASE_PROJECT_REF = "palabra_clara";
-    public static final String SUPABASE_BUCKET = "videos palabra clara";
+    public static final String SUPABASE_BUCKET = "videos_palabra_clara";
     public static final String SUPABASE_URL = "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/s3";
     public static final String SUPABASE_SECRET_ACCESS_KEY = "c931b31ceb9a773512ca9465136305890d001abf672dc1e9499f9d201b80b1eb";
     public static final String SUPABASE_ACCESS_KEY_ID = "041a0f52ed515d9d2f7002aaf2a25cf9";

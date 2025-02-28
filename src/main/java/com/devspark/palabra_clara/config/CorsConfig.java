@@ -17,11 +17,8 @@ public class CorsConfig implements WebMvcConfigurer {
                 .allowCredentials(false)
                 .maxAge(3600);
     }
-
     @Bean
     public Encoder ffmpegEncoder() {
-        // Configuración manual para usar FFmpeg del sistema
-        System.setProperty("jave.ffmpeg.path", "/usr/bin/ffmpeg");
         return new Encoder();
     }
 }

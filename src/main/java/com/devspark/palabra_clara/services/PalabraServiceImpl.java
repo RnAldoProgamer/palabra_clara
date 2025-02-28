@@ -252,11 +252,23 @@ public class PalabraServiceImpl implements IPalabraService{
         AmazonS3 s3Client = createS3ClientComponent();
         String bucketName = StaticConstants.SUPABASE_BUCKET; // Define tu bucket en las constantes
 
-        // Sube el archivo al bucket
-        s3Client.putObject(new PutObjectRequest(bucketName, fileName, file));
+        // Obtener el nombre del video sin la extensión
+        String videoName;
+        int dotIndex = fileName.lastIndexOf('.');
+        if (dotIndex != -1) {
+            videoName = fileName.substring(0, dotIndex); // Ejemplo: "video" de "video.mp4"
+        } else {
+            videoName = fileName; // Si no hay extensión, usa el nombre completo
+        }
 
-        // Obtén la URL del objeto subido
-        return s3Client.getUrl(bucketName, fileName).toString();
+        // Construir la clave con la "carpeta" (prefijo)
+        String key = videoName + "/" + fileName; // Ejemplo: "video/video.mp4"
+
+        // Subir el archivo al bucket con la nueva clave
+        s3Client.putObject(new PutObjectRequest(bucketName, key, file));
+
+        // Obtener la URL del objeto subido
+        return s3Client.getUrl(bucketName, key).toString();
     }
 
     private AmazonS3 createS3ClientComponent() {

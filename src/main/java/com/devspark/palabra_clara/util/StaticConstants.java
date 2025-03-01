@@ -135,6 +135,7 @@ public class StaticConstants {
     public static final String SUPABASE_URL = "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/s3";
     public static final String SUPABASE_SECRET_ACCESS_KEY = "c931b31ceb9a773512ca9465136305890d001abf672dc1e9499f9d201b80b1eb";
     public static final String SUPABASE_ACCESS_KEY_ID = "041a0f52ed515d9d2f7002aaf2a25cf9";
+    public static final String SUPABASE_JWT_TOKEN = "sbp_3638771a4f73ecf98b9f1cced8d971717d62a722";
 
     /*
     * Constructores Constantes

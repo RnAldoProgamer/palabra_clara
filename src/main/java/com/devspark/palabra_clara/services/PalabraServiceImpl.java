@@ -1,11 +1,6 @@
 package com.devspark.palabra_clara.services;
 
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
-import com.amazonaws.services.s3.model.PutObjectRequest;
+import com.devspark.palabra_clara.component.SubirVideosSupabaseComponent;
 import com.devspark.palabra_clara.component.TextoVozComponent;
 import com.devspark.palabra_clara.component.TraducirBraileComponent;
 import com.devspark.palabra_clara.component.TraducirPalabraComponent;
@@ -51,15 +46,17 @@ public class PalabraServiceImpl implements IPalabraService{
     private static final Logger logger = LoggerFactory.getLogger(PalabraServiceImpl.class);
     private final TraducirBraileComponent traducirBraileComponent;
     private final Encoder ffmpegEncoder;
+    private final SubirVideosSupabaseComponent subirVideosSupabaseComponent;
 
     @Autowired
-    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent, TraducirBraileComponent traducirBraileComponent, Encoder ffmpegEncoder) {
+    public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent, TraducirBraileComponent traducirBraileComponent, Encoder ffmpegEncoder, SubirVideosSupabaseComponent subirVideosSupabaseComponent) {
         this.palabraRepository = palabraRepository;
         this.varianteRepository = varianteRepository;
         this.textoVozComponent = textoVozComponent;
         this.traducirPalabraComponent = traducirPalabraComponent;
         this.traducirBraileComponent = traducirBraileComponent;
         this.ffmpegEncoder = ffmpegEncoder;
+        this.subirVideosSupabaseComponent = subirVideosSupabaseComponent;
     }
 
     public GenericResponse traducirPalabraGroq(String palabra) {
@@ -227,7 +224,7 @@ public class PalabraServiceImpl implements IPalabraService{
                 throw new IOException(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO);
             }
 
-            return uploadFileToSupabaseS3(target, fileName);
+            return subirVideosSupabaseComponent.uploadFileToSupabaseS3(target, fileName);
 
         } catch (EncoderException e) {
             logger.error(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO, e);
@@ -246,47 +243,6 @@ public class PalabraServiceImpl implements IPalabraService{
         } catch (IOException e) {
             logger.warn("Error eliminando temporal: {}", file.getAbsolutePath(), e);
         }
-    }
-
-    private String uploadFileToSupabaseS3(File file, String fileName) throws IOException {
-        AmazonS3 s3Client = createS3ClientComponent();
-        String bucketName = StaticConstants.SUPABASE_BUCKET; // Define tu bucket en las constantes
-
-        // Obtener el nombre del video sin la extensión
-        String videoName;
-        int dotIndex = fileName.lastIndexOf('.');
-        if (dotIndex != -1) {
-            videoName = fileName.substring(0, dotIndex); // Ejemplo: "video" de "video.mp4"
-        } else {
-            videoName = fileName; // Si no hay extensión, usa el nombre completo
-        }
-
-        // Construir la clave con la "carpeta" (prefijo)
-        String key = videoName + "/" + fileName; // Ejemplo: "video/video.mp4"
-
-        // Subir el archivo al bucket con la nueva clave
-        s3Client.putObject(new PutObjectRequest(bucketName, key, file));
-
-        // Obtener la URL del objeto subido
-        return s3Client.getUrl(bucketName, key).toString();
-    }
-
-    private AmazonS3 createS3ClientComponent() {
-        BasicAWSCredentials awsCreds = new BasicAWSCredentials(
-            StaticConstants.SUPABASE_ACCESS_KEY_ID,
-            StaticConstants.SUPABASE_SECRET_ACCESS_KEY
-        );
-
-        return AmazonS3ClientBuilder.standard()
-            .withEndpointConfiguration(
-                new AwsClientBuilder.EndpointConfiguration(
-                    "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/s3",
-                    "us-west-1" // Generalmente se usa esta región; verifica con tu configuración
-                )
-            )
-            .withCredentials(new AWSStaticCredentialsProvider(awsCreds))
-            .withPathStyleAccessEnabled(true) // Es importante para endpoints personalizados
-            .build();
     }
 
     private PalabraEntity beanToEntity(PalabraRequestBean palabraRequest) {

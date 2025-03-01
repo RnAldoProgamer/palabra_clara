@@ -78,11 +78,11 @@
 		</dependency>
 
 		<!-- AWS SDK -->
-		<dependency>
+		<!--<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk</artifactId>
 			<version>1.12.781</version>
-		</dependency>
+		</dependency>-->
 
 		<dependency>
 			<groupId>ws.schild</groupId>

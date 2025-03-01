@@ -1,6 +1,7 @@
 package com.devspark.palabra_clara.component;
 
 import org.springframework.http.*;
+import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
@@ -9,6 +10,7 @@ import java.nio.file.Files;
 
 import static com.devspark.palabra_clara.util.StaticConstants.*;
 
+@Component
 public class SubirVideosSupabaseComponent {
 
   public String uploadFileToSupabaseS3(File file, String fileName) throws IOException {

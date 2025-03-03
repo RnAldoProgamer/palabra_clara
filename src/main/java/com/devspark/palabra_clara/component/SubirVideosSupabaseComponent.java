@@ -32,6 +32,7 @@ public class SubirVideosSupabaseComponent {
     // Configurar los encabezados HTTP
     HttpHeaders headers = new HttpHeaders();
     headers.set("Authorization", "Bearer " + SUPABASE_JWT_TOKEN);
+    headers.set("apikey", SUPABASE_API_KEY); // Necesario junto con el token
     headers.set("Content-Type", "application/octet-stream"); // Tipo MIME genérico para archivos binarios
 
     // Leer el archivo como bytes
@@ -52,7 +53,7 @@ public class SubirVideosSupabaseComponent {
     // Verificar si la subida fue exitosa
     if (response.getStatusCode().is2xxSuccessful()) {
       // Devolver la URL pública del archivo subido
-      return "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/object/public/" + SUPABASE_BUCKET + "/" + key;
+      return "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/object/" + SUPABASE_BUCKET + "/" + key;
     } else {
       throw new IOException("Error al subir el archivo a Supabase: " + response.getBody());
     }

@@ -133,9 +133,11 @@ public class StaticConstants {
     public static final String SUPABASE_PROJECT_REF = "palabra_clara";
     public static final String SUPABASE_BUCKET = "videos_palabra_clara";
     public static final String SUPABASE_URL = "https://ufloszpkhtuczintyaya.supabase.co/storage/v1/object/";
-    public static final String SUPABASE_SECRET_ACCESS_KEY = "c931b31ceb9a773512ca9465136305890d001abf672dc1e9499f9d201b80b1eb";
-    public static final String SUPABASE_ACCESS_KEY_ID = "041a0f52ed515d9d2f7002aaf2a25cf9";
-    public static final String SUPABASE_JWT_TOKEN = "sbp_3638771a4f73ecf98b9f1cced8d971717d62a722";
+//    public static final String SUPABASE_SECRET_ACCESS_KEY = "c931b31ceb9a773512ca9465136305890d001abf672dc1e9499f9d201b80b1eb";
+    public static final String SUPABASE_API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmbG9zenBraHR1Y3ppbnR5YXlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MTYyMjcsImV4cCI6MjA1NTQ5MjIyN30.D8Y78LMjbWvUwqgh04MYMaUqaZA7iDyCM5_xt325HKY";
+    public static final String SUPABASE_JWT_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVmbG9zenBraHR1Y3ppbnR5YXlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzk5MTYyMjcsImV4cCI6MjA1NTQ5MjIyN30.D8Y78LMjbWvUwqgh04MYMaUqaZA7iDyCM5_xt325HKY";
+
+
 
     /*
     * Constructores Constantes

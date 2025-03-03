@@ -154,30 +154,31 @@ public class PalabraServiceImpl implements IPalabraService{
     }
 
     @Override
-    public ResponseEntity<Resource> descargarVideo(String palabra) {
+    /**
+     * Método para descargar un video de Supabase basado en el nombre de la palabra,
+     * buscando primero la URL en la base de datos.
+     *
+     * @param palabra Palabra asociada al video que se desea descargar
+     * @return ResponseEntity con el recurso de video para descarga
+     */
+    public ResponseEntity<Resource> descargarVideoPorPalabra(String palabra) {
         try {
             Optional<PalabraEntity> palabraEntityOpt = palabraRepository.findByPalabraIgnoreCase(palabra);
 
             if (palabraEntityOpt.isPresent()) {
-                String path = palabraEntityOpt.get().getPath();
-                Path fileStorageLocation = Paths.get(path).toAbsolutePath().normalize();
-                Resource resource = new UrlResource(fileStorageLocation.toUri());
+                // Obtener la URL almacenada en la entidad
+                String urlSupabase = palabraEntityOpt.get().getPath();
 
-                if (resource.exists()) {
-                    String fileName = fileStorageLocation.getFileName().toString();
-                    HttpHeaders headers = new HttpHeaders();
-                    headers.add(HttpHeaders.CONTENT_DISPOSITION, String.format(StaticConstants.CONTENT_DISPOSITION, fileName));
-
-                    return ResponseEntity.ok()
-                            .headers(headers)
-                            .contentLength(resource.contentLength())
-                            .contentType(MediaType.parseMediaType(StaticConstants.TIPO_VIDEO))
-                            .body(resource);
-                } else {
-                    logger.error(StaticConstants.MENSAJE_DESCARGAR_ADVERTENCIA);
+                // Verificar que la URL exista
+                if (urlSupabase == null || urlSupabase.isEmpty()) {
+                    logger.error("No se encontró URL de Supabase para la palabra: " + palabra);
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
+
+                // Llamar al método de descarga con la URL
+                return subirVideosSupabaseComponent.descargarVideoDeSupabase(urlSupabase);
             } else {
+                logger.error("No se encontró la palabra: " + palabra);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
             }
         } catch (Exception e) {

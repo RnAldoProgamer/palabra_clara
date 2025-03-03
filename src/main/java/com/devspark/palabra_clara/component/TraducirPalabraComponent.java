@@ -2,6 +2,7 @@ package com.devspark.palabra_clara.component;
 
 import com.devspark.palabra_clara.model.RespuestaGroqBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -166,4 +167,5 @@ public class TraducirPalabraComponent {
             return "Error al obtener la respuesta: " + e.getMessage();
         }
     }
+
 }

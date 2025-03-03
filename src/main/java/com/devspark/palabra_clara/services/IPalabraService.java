@@ -15,7 +15,7 @@ public interface IPalabraService {
 
     GenericResponse guardarPalabra(PalabraRequestBean palabraRequest, Map<String, MultipartFile> video) throws EncoderException, IOException;
 
-    ResponseEntity<Resource> descargarVideo(String filename);
+    ResponseEntity<Resource> descargarVideoPorPalabra(String filename);
 
     GenericResponse actualizarPalabra(PalabraRequestBean palabraRequestBean, Map<String, MultipartFile> video) throws EncoderException, IOException;
 

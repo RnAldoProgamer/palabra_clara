@@ -46,7 +46,7 @@ public class TraductorController {
 
     @GetMapping("/descargarVideo/{palabra}")
     public ResponseEntity<Resource> descargarVideo(@PathVariable String palabra) {
-        return iPalabraService.descargarVideo(palabra);
+        return iPalabraService.descargarVideoPorPalabra(palabra);
     }
 
     @PostMapping("/convertirTextoAVoz")

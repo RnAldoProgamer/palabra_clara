@@ -1,6 +1,8 @@
 package com.devspark.palabra_clara.component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -11,9 +13,11 @@ import java.util.Map;
 @Component
 public class TextoVozComponent {
 
+    private static final Logger logger = LoggerFactory.getLogger(TextoVozComponent.class);
+//            String apiKey = "sk_eea734ef621e8c52284b06c73e384ffda24a977750ada3eb";
     public ResponseEntity<byte[]> textoVoz(String texto) {
         try {
-            String apiKey = "sk_eea734ef621e8c52284b06c73e384ffda24a977750ada3eb";
+            String apiKey = "API_KEY";
             String url = "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL";
 
             HttpHeaders headers = new HttpHeaders();
@@ -48,6 +52,7 @@ public class TextoVozComponent {
                     .contentType(MediaType.APPLICATION_OCTET_STREAM)
                     .body(response.getBody());
         } catch (Exception e) {
+            logger.error("Error al procesar texto a voz", e); // Loguea la excepción completa
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(("Error al traducir el texto: " + e.getMessage().getBytes()).getBytes());
         }

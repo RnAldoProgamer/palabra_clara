@@ -14,10 +14,9 @@ import java.util.Map;
 public class TextoVozComponent {
 
     private static final Logger logger = LoggerFactory.getLogger(TextoVozComponent.class);
-//            String apiKey = "sk_eea734ef621e8c52284b06c73e384ffda24a977750ada3eb";
     public ResponseEntity<byte[]> textoVoz(String texto) {
         try {
-            String apiKey = "API_KEY";
+            String apiKey = "sk_eea734ef621e8c52284b06c73e384ffda24a977750ada3eb";
             String url = "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL";
 
             HttpHeaders headers = new HttpHeaders();

@@ -23,6 +23,9 @@ public class TextoVozComponent {
         try {
             String url = "https://api.elevenlabs.io/v1/text-to-speech/EXAVITQu4vr4xnSDxMaL";
 
+            logger.info("Procesando texto a voz: {}", texto);
+            logger.info("URL: {}", url);
+            logger.info("API Key: {}", apiKey);
             // Configuración de encabezados
             HttpHeaders headers = new HttpHeaders();
             headers.set("xi-api-key", apiKey);

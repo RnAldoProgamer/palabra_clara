@@ -69,7 +69,10 @@ public class TextoVozComponent {
                     .body(("Error en la API: " + response.getStatusCode()).getBytes());
             }
         } catch (HttpClientErrorException e) {
-            logger.error("Error en la API: {} - {}", e.getStatusCode(), e.getResponseBodyAsString());
+            logger.error("Error en la API: {} - Headers: {} - Body: {}",
+                e.getStatusCode(),
+                e.getResponseHeaders(),
+                e.getResponseBodyAsString());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(("Error en la API: " + e.getStatusCode()).getBytes());
         } catch (Exception e) {

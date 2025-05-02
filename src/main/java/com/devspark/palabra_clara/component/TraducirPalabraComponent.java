@@ -23,128 +23,9 @@ public class TraducirPalabraComponent {
             headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "llama-3.1-8b-instant");
+            requestBody.put("model", "meta-llama/llama-4-maverick-17b-128e-instruct");
             requestBody.put("messages", new Object[] {
-                new HashMap<String, String>() {{
                     put("role", "user");
-                    put("content", "Vas a actuar como traductor. Te proporcionaré una palabra o frase en español, y necesito que me la traduzcas al inglés, alemán y francés. Para el alemán, por favor, proporciona el artículo y la traducción de la palabra por separado. Además, incluye una breve descripción de la palabra en cada idioma (español, inglés, alemán y francés). Devuélveme solo el JSON con las traducciones y descripciones, sin ningún texto adicional.\n\n" +
-                        "El JSON generado debe ser válido y estar bien formado. Evita errores comunes como: \n" +
-                        "- Faltan comas entre elementos.\n" +
-                        "- Llaves o corchetes mal cerrados.\n" +
-                        "- Caracteres inesperados o mal ubicados.\n\n" +
-                        "Ejemplo de formato JSON esperado:\n" +
-                        "```json\n" +
-                        "{\n" +
-                        "  \"es\": {\n" +
-                        "    \"word\": \"Patata\",\n" +
-                        "    \"desc\": \"Tubérculo comestible de origen sudamericano\"\n" +
-                        "  },\n" +
-                        "  \"en\": {\n" +
-                        "    \"word\": \"Potato\",\n" +
-                        "    \"desc\": \"Edible tuber native to South America\"\n" +
-                        "  },\n" +
-                        "  \"de\": {\n" +
-                        "    \"art\": \"Die\",\n" +
-                        "    \"trans\": \"Kartoffel\",\n" +
-                        "    \"desc\": \"Essbare Knolle aus Südamerika\"\n" +
-                        "  },\n" +
-                        "  \"fr\": {\n" +
-                        "    \"word\": \"Pomme de terre\",\n" +
-                        "    \"desc\": \"Tubercule comestible originaire d'Amérique du Sud\"\n" +
-                        "  }\n" +
-                        "}\n" +
-                        "```\n\n" +
-                        "Otro ejemplo:\n" +
-                        "```json\n" +
-                        "{\n" +
-                        "  \"es\": {\n" +
-                        "    \"word\": \"Casa\",\n" +
-                        "    \"desc\": \"Edificio para vivienda\"\n" +
-                        "  },\n" +
-                        "  \"en\": {\n" +
-                        "    \"word\": \"House\",\n" +
-                        "    \"desc\": \"Building for living\"\n" +
-                        "  },\n" +
-                        "  \"de\": {\n" +
-                        "    \"art\": \"Das\",\n" +
-                        "    \"trans\": \"Haus\",\n" +
-                        "    \"desc\": \"Gebäude zum Wohnen\"\n" +
-                        "  },\n" +
-                        "  \"fr\": {\n" +
-                        "    \"word\": \"Maison\",\n" +
-                        "    \"desc\": \"Bâtiment pour habiter\"\n" +
-                        "  }\n" +
-                        "}\n" +
-                        "```\n\n" +
-                        "Y otro más:\n" +
-                        "```json\n" +
-                        "{\n" +
-                        "  \"es\": {\n" +
-                        "    \"word\": \"Perro\",\n" +
-                        "    \"desc\": \"Mamífero doméstico leal\"\n" +
-                        "  },\n" +
-                        "  \"en\": {\n" +
-                        "    \"word\": \"Dog\",\n" +
-                        "    \"desc\": \"Loyal domestic mammal\"\n" +
-                        "  },\n" +
-                        "  \"de\": {\n" +
-                        "    \"art\": \"Der\",\n" +
-                        "    \"trans\": \"Hund\",\n" +
-                        "    \"desc\": \"Treues Haussäugetier\"\n" +
-                        "  },\n" +
-                        "  \"fr\": {\n" +
-                        "    \"word\": \"Chien\",\n" +
-                        "    \"desc\": \"Mammifère domestique fidèle\"\n" +
-                        "  }\n" +
-                        "}\n" +
-                        "```\n\n" +
-                        "Otro ejemplo adicional:\n" +
-                        "```json\n" +
-                        "{\n" +
-                        "  \"es\": {\n" +
-                        "    \"word\": \"Gato\",\n" +
-                        "    \"desc\": \"Felino doméstico independiente\"\n" +
-                        "  },\n" +
-                        "  \"en\": {\n" +
-                        "    \"word\": \"Cat\",\n" +
-                        "    \"desc\": \"Independent domestic feline\"\n" +
-                        "  },\n" +
-                        "  \"de\": {\n" +
-                        "    \"art\": \"Der\",\n" +
-                        "    \"trans\": \"Kater\",\n" +
-                        "    \"desc\": \"Unabhängige Haskatze\"\n" +
-                        "  },\n" +
-                        "  \"fr\": {\n" +
-                        "    \"word\": \"Chat\",\n" +
-                        "    \"desc\": \"Félin domestique indépendant\"\n" +
-                        "  }\n" +
-                        "}\n" +
-                        "```\n\n" +
-                        "Ejemplo con frase larga:\n" +
-                        "```json\n" +
-                        "{\n" +
-                        "  \"es\": {\n" +
-                        "    \"word\": \"Fuerza Regida\",\n" +
-                        "    \"desc\": \"Grupo musical de corridos tumbados\"\n" +
-                        "  },\n" +
-                        "  \"en\": {\n" +
-                        "    \"word\": \"Regulated Force\",\n" +
-                        "    \"desc\": \"Musical group of tumbado corridos\"\n" +
-                        "  },\n" +
-                        "  \"de\": {\n" +
-                        "    \"art\": \"Die\",\n" +
-                        "    \"trans\": \"Regulierte Kraft\",\n" +
-                        "    \"desc\": \"Musikgruppe von Tumbado-Corridos\"\n" +
-                        "  },\n" +
-                        "  \"fr\": {\n" +
-                        "    \"word\": \"Force Régulée\",\n" +
-                        "    \"desc\": \"Groupe musical de corridos tumbados\"\n" +
-                        "  }\n" +
-                        "}\n" +
-                        "```\n\n" +
-                        "Es importante que solo devuelvas el JSON con las traducciones y descripciones, sin ningún texto adicional. No incluyas ninguna explicación o comentario, solo el JSON.\n\n" +
-                        "La palabra en español es: " + texto);
-                }}
             });
 
             ObjectMapper objectMapper = new ObjectMapper();
@@ -153,6 +34,75 @@ public class TraducirPalabraComponent {
             HttpEntity<String> entity = new HttpEntity<>(jsonBody, headers);
 
             RestTemplate restTemplate = new RestTemplate();
+            new HashMap<String, String>() {{
+                put("role", "user");
+                put("content",
+                    "Vas a actuar como traductor. Te proporcionaré una palabra o frase en español, y necesito que me la traduzcas al inglés, alemán, francés, portugués y náhuatl tlaxcalteco.\n" +
+                        "- Para el alemán, proporciona el artículo y la traducción de la palabra por separado.\n" +
+                        "- Para el náhuatl tlaxcalteco (clave \"nah\"), además de la palabra y la descripción, incluye un subcampo \"variants\" con otras variantes dialectales que puedan usarse.\n" +
+                        "- Para el portugués (clave \"pt\"), incluye la palabra traducida y su descripción en portugués.\n\n" +
+                        "Devuélveme solo el JSON con las traducciones, descripciones y variantes, sin ningún texto adicional.\n" +
+                        "El JSON generado debe ser válido y bien formado. Evita errores comunes como:\n" +
+                        "- Faltan comas entre elementos.\n" +
+                        "- Llaves o corchetes mal cerrados.\n" +
+                        "- Caracteres inesperados o mal ubicados.\n\n" +
+                        "Ejemplo (Patata):\n" +
+                        "```json\n" +
+                        "{\n" +
+                        "  \"es\": { \"word\": \"Patata\", \"desc\": \"Tubérculo comestible de origen sudamericano\" },\n" +
+                        "  \"en\": { \"word\": \"Potato\", \"desc\": \"Edible tuber native to South America\" },\n" +
+                        "  \"de\": { \"art\": \"Die\", \"trans\": \"Kartoffel\", \"desc\": \"Essbare Knolle aus Südamerika\" },\n" +
+                        "  \"fr\": { \"word\": \"Pomme de terre\", \"desc\": \"Tubercule comestible originaire d'Amérique du Sud\" },\n" +
+                        "  \"pt\": { \"word\": \"Batata\", \"desc\": \"Tubérculo comestível de origem sul-americana\" },\n" +
+                        "  \"nah\": { \"word\": \"Chīxpatli\", \"desc\": \"Tlātokayotl nēwatl tōnali\", \"variants\": [\"Tialli\",\"Pialli\"] }\n" +
+                        "}\n" +
+                        "```\n\n" +
+                        "Ejemplo (Casa):\n" +
+                        "```json\n" +
+                        "{\n" +
+                        "  \"es\": { \"word\": \"Casa\", \"desc\": \"Edificio para vivienda\" },\n" +
+                        "  \"en\": { \"word\": \"House\", \"desc\": \"Building for living\" },\n" +
+                        "  \"de\": { \"art\": \"Das\", \"trans\": \"Haus\", \"desc\": \"Gebäude zum Wohnen\" },\n" +
+                        "  \"fr\": { \"word\": \"Maison\", \"desc\": \"Bâtiment pour habiter\" },\n" +
+                        "  \"pt\": { \"word\": \"Casa\", \"desc\": \"Edifício destinado à habitação\" },\n" +
+                        "  \"nah\": { \"word\": \"Calli\", \"desc\": \"Lugar donde vive la gente\", \"variants\": [\"Nēmalli\",\"Tēttēn\"] }\n" +
+                        "}\n" +
+                        "```\n\n" +
+                        "Ejemplo (Perro):\n" +
+                        "```json\n" +
+                        "{\n" +
+                        "  \"es\": { \"word\": \"Perro\", \"desc\": \"Mamífero doméstico leal\" },\n" +
+                        "  \"en\": { \"word\": \"Dog\", \"desc\": \"Loyal domestic mammal\" },\n" +
+                        "  \"de\": { \"art\": \"Der\", \"trans\": \"Hund\", \"desc\": \"Treues Haussäugetier\" },\n" +
+                        "  \"fr\": { \"word\": \"Chien\", \"desc\": \"Mammifère domestique fidèle\" },\n" +
+                        "  \"pt\": { \"word\": \"Cão\", \"desc\": \"Mamífero doméstico leal\" },\n" +
+                        "  \"nah\": { \"word\": \"Itzcuintli\", \"desc\": \"Cuānahuac tlālli ahmōtlī\", \"variants\": [\"Itzcuintin\",\"Itzcohualloni\"] }\n" +
+                        "}\n" +
+                        "```\n\n" +
+                        "Ejemplo (Gato):\n" +
+                        "```json\n" +
+                        "{\n" +
+                        "  \"es\": { \"word\": \"Gato\", \"desc\": \"Felino doméstico independiente\" },\n" +
+                        "  \"en\": { \"word\": \"Cat\", \"desc\": \"Independent domestic feline\" },\n" +
+                        "  \"de\": { \"art\": \"Der\", \"trans\": \"Kater\", \"desc\": \"Unabhängige Hauskatze\" },\n" +
+                        "  \"fr\": { \"word\": \"Chat\", \"desc\": \"Félin domestique indépendant\" },\n" +
+                        "  \"pt\": { \"word\": \"Gato\", \"desc\": \"Felino doméstico independente\" },\n" +
+                        "  \"nah\": { \"word\": \"Miztli\", \"desc\": \"Mīztli nōn tlālli\", \"variants\": [\"Miztli tlatoani\",\"Miztli ahmo cēnca\"] }\n" +
+                        "}\n" +
+                        "```\n\n" +
+                        "Ejemplo (Fuerza Regida):\n" +
+                        "```json\n" +
+                        "{\n" +
+                        "  \"es\": { \"word\": \"Fuerza Regida\", \"desc\": \"Grupo musical de corridos tumbados\" },\n" +
+                        "  \"en\": { \"word\": \"Regulated Force\", \"desc\": \"Musical group of tumbado corridos\" },\n" +
+                        "  \"de\": { \"art\": \"Die\", \"trans\": \"Regulierte Kraft\", \"desc\": \"Musikgruppe von Tumbado-Corridos\" },\n" +
+                        "  \"fr\": { \"word\": \"Force Régulée\", \"desc\": \"Groupe musical de corridos tumbados\" },\n" +
+                        "  \"pt\": { \"word\": \"Força Regulada\", \"desc\": \"Grupo musical de corridos tumbados\" },\n" +
+                        "  \"nah\": { \"word\": \"Tlamantli Tepākualli\", \"desc\": \"Kwikni katal kws Tumbado-Corridos\", \"variants\": [\"Tlamantli Tepākualli\",\"Tlamantli Cualankatl\"] }\n" +
+                        "}\n" +
+                        "```\n\n" +
+                        "La palabra en español es:" + texto);
+            }};
             ResponseEntity<String> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,

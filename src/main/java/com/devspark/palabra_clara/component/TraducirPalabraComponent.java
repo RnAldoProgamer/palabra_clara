@@ -14,7 +14,7 @@ public class TraducirPalabraComponent {
 
     public String traducirPalabra(String texto){
         try {
-            String apiKey = ""; // Reemplaza con tu clave de API
+            String apiKey = "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"; // Reemplaza con tu clave de API
             String url = "https://api.groq.com/openai/v1/chat/completions"; // Reemplaza con el endpoint real de la API de Groq
 
             HttpHeaders headers = new HttpHeaders();

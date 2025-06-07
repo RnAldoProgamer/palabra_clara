@@ -22,7 +22,7 @@ public class TraducirPalabraComponent {
             headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "meta-llama/llama-4-scout-17b-16e-instruct");
+            requestBody.put("model", "llama-3.3-70b-versatile");
             requestBody.put("messages", new Object[] {
                 new HashMap<String, String>() {{
                     put("role", "user");

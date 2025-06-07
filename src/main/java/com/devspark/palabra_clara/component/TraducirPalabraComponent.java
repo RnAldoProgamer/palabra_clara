@@ -14,7 +14,7 @@ public class TraducirPalabraComponent {
 
     public String traducirPalabra(String texto){
         try {
-            String apiKey = "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"; // Reemplaza con tu clave de API
+            String apiKey = "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"; // Reemplaza con tu clave de API
             String url = "https://api.groq.com/openai/v1/chat/completions"; // Reemplaza con el endpoint real de la API de Groq
 
             HttpHeaders headers = new HttpHeaders();
@@ -22,7 +22,7 @@ public class TraducirPalabraComponent {
             headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "meta-llama/llama-4-maverick-17b-128e-instruct");
+            requestBody.put("model", "meta-llama/llama-4-scout-17b-16e-instruct");
             requestBody.put("messages", new Object[] {
                 new HashMap<String, String>() {{
                     put("role", "user");

@@ -2,6 +2,7 @@ package com.devspark.palabra_clara.component;
 
 import com.devspark.palabra_clara.model.RespuestaGroqBean;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
@@ -12,17 +13,47 @@ import java.util.Map;
 @Component
 public class TraducirPalabraComponent {
 
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
+    @Value("${groq.api.key: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}")
+    private String groqApiKey;
+
+    @Value("${groq.api.url:https://api.groq.com/openai/v1/chat/completions}")
+    private String groqApiUrl;
+
+    @Value("${groq.model:llama-3.3-70b-versatile}")
+    private String groqModel;
+
+    @Value("${ollama.api.url:http://localhost:11434/v1/chat/completions}")
+    private String ollamaApiUrl;
+
+    @Value("${ollama.model:qwen3:4b}")
+    private String ollamaModel;
+
     public String traducirPalabra(String texto){
         try {
-            String apiKey = "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"; // Reemplaza con tu clave de API
-            String url = "https://api.groq.com/openai/v1/chat/completions"; // Reemplaza con el endpoint real de la API de Groq
+            String url;
+            String model;
+            String apiKeyHeader = null;
+
+            if ("prod".equalsIgnoreCase(activeProfile)) {
+                url = groqApiUrl;
+                model = groqModel;
+                apiKeyHeader = "Bearer " + groqApiKey;
+            } else {
+                url = ollamaApiUrl;
+                model = ollamaModel;
+            }
 
             HttpHeaders headers = new HttpHeaders();
-            headers.set("Authorization", "Bearer " + apiKey);
+            if (apiKeyHeader != null) {
+                headers.set("Authorization", apiKeyHeader);
+            }
             headers.set(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE);
 
             Map<String, Object> requestBody = new HashMap<>();
-            requestBody.put("model", "llama-3.3-70b-versatile");
+            requestBody.put("model", model);
             requestBody.put("messages", new Object[] {
                 new HashMap<String, String>() {{
                     put("role", "user");

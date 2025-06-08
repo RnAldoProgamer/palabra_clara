@@ -1,11 +1,9 @@
 package com.devspark.palabra_clara.component;
 
-import com.devspark.palabra_clara.repository.PalabraRepository;
 import com.devspark.palabra_clara.services.PalabraServiceImpl;
 import com.devspark.palabra_clara.util.StaticConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
@@ -25,12 +23,6 @@ import static com.devspark.palabra_clara.util.StaticConstants.*;
 public class SubirVideosSupabaseComponent {
 
   private static final Logger logger = LoggerFactory.getLogger(PalabraServiceImpl.class);
-  private final PalabraRepository palabraRepository;
-
-  @Autowired
-  public SubirVideosSupabaseComponent(PalabraRepository palabraRepository) {
-    this.palabraRepository = palabraRepository;
-  }
 
   public String uploadFileToSupabaseS3(File file, String fileName) throws IOException {
     // Obtener el nombre del video sin la extensión
@@ -113,12 +105,13 @@ public class SubirVideosSupabaseComponent {
       );
 
       // Verificar si la descarga fue exitosa
-      if (supabaseResponse.getStatusCode().is2xxSuccessful() && supabaseResponse.getBody() != null) {
+      byte[] body = supabaseResponse.getBody();
+      if (supabaseResponse.getStatusCode().is2xxSuccessful() && body != null) {
         // Obtener el nombre del archivo de la URL
         String fileName = extraerNombreArchivo(url);
 
         // Crear un recurso a partir de los bytes descargados
-        ByteArrayResource resource = new ByteArrayResource(supabaseResponse.getBody());
+        ByteArrayResource resource = new ByteArrayResource(body);
 
         // Configurar los encabezados de la respuesta
         HttpHeaders responseHeaders = new HttpHeaders();

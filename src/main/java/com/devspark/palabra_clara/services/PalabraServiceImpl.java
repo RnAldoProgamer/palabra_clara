@@ -18,6 +18,8 @@ import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,9 @@ public class PalabraServiceImpl implements IPalabraService{
     private final TraducirBraileComponent traducirBraileComponent;
     private final Encoder ffmpegEncoder;
     private final SubirVideosSupabaseComponent subirVideosSupabaseComponent;
+
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
 
     @Autowired
     public PalabraServiceImpl(PalabraRepository palabraRepository, VarianteRepository varianteRepository, TextoVozComponent textoVozComponent, TraducirPalabraComponent traducirPalabraComponent, TraducirBraileComponent traducirBraileComponent, Encoder ffmpegEncoder, SubirVideosSupabaseComponent subirVideosSupabaseComponent) {
@@ -150,29 +155,35 @@ public class PalabraServiceImpl implements IPalabraService{
     }
 
     @Override
-    /**
-     * Método para descargar un video de Supabase basado en el nombre de la palabra,
-     * buscando primero la URL en la base de datos.
-     *
-     * @param palabra Palabra asociada al video que se desea descargar
-     * @return ResponseEntity con el recurso de video para descarga
-     */
     public ResponseEntity<Resource> descargarVideoPorPalabra(String palabra) {
         try {
             Optional<PalabraEntity> palabraEntityOpt = palabraRepository.findByPalabraIgnoreCase(palabra);
 
             if (palabraEntityOpt.isPresent()) {
-                // Obtener la URL almacenada en la entidad
-                String urlSupabase = palabraEntityOpt.get().getPath();
+                String path = palabraEntityOpt.get().getPath();
 
-                // Verificar que la URL exista
-                if (urlSupabase == null || urlSupabase.isEmpty()) {
-                    logger.error("No se encontró URL de Supabase para la palabra: " + palabra);
+                if (path == null || path.isEmpty()) {
+                    logger.error("No se encontró URL de Supabase o ruta local para la palabra: " + palabra);
                     return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
                 }
 
-                // Llamar al método de descarga con la URL
-                return subirVideosSupabaseComponent.descargarVideoDeSupabase(urlSupabase);
+                if ("dev".equalsIgnoreCase(activeProfile)) {
+                    // Sirve el archivo local
+                    File file = new File(path);
+                    if (!file.exists()) {
+                        logger.error("Archivo local no encontrado: " + path);
+                        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
+                    }
+                    FileSystemResource resource = new FileSystemResource(file);
+                    HttpHeaders headers = new HttpHeaders();
+                    headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                    headers.setContentLength(file.length());
+                    headers.setContentDisposition(ContentDisposition.attachment().filename(file.getName()).build());
+                    return new ResponseEntity<>(resource, headers, HttpStatus.OK);
+                } else {
+                    // Descarga desde Supabase
+                    return subirVideosSupabaseComponent.descargarVideoDeSupabase(path);
+                }
             } else {
                 logger.error("No se encontró la palabra: " + palabra);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -205,7 +216,19 @@ public class PalabraServiceImpl implements IPalabraService{
 
         File source = File.createTempFile("video_", StaticConstants.TERMINACION_TMP);
         String fileName = palabra.getPalabra() + StaticConstants.PUNTO_DOT + format.getExtension();
-        File target = new File(tempDirectoryPath + File.separator + fileName);
+
+        File target;
+        if ("dev".equalsIgnoreCase(activeProfile)) {
+            // Guarda en carpeta por palabra, ejemplo: C:\videosPalabraClara\abeja\abeja.webm
+            String baseDir = "C:\\videosPalabraClara";
+            File palabraDir = new File(baseDir, palabra.getPalabra());
+            if (!palabraDir.exists() && !palabraDir.mkdirs()) {
+                throw new IOException("No se pudo crear el directorio: " + palabraDir.getAbsolutePath());
+            }
+            target = new File(palabraDir, fileName);
+        } else {
+            target = new File(tempDirectoryPath + File.separator + fileName);
+        }
 
         try {
             inputVideo.transferTo(source);
@@ -214,21 +237,28 @@ public class PalabraServiceImpl implements IPalabraService{
                 .setVideoAttributes(format.getVideoAttributes())
                 .setOutputFormat(format.getExtension());
 
-            // Usamos el encoder inyectado
             ffmpegEncoder.encode(new MultimediaObject(source), target, attrs);
 
             if (!target.exists() || target.length() == 0) {
                 throw new IOException(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO);
             }
 
-            return subirVideosSupabaseComponent.uploadFileToSupabaseS3(target, fileName);
+            if ("dev".equalsIgnoreCase(activeProfile)) {
+                // Retorna la ruta absoluta local
+                return target.getAbsolutePath();
+            } else {
+                // Sube a Supabase y retorna la URL
+                return subirVideosSupabaseComponent.uploadFileToSupabaseS3(target, fileName);
+            }
 
         } catch (EncoderException e) {
             logger.error(StaticConstants.MENSAJE_ERROR_COMPRIMIR_VIDEO, e);
             throw new IOException("Error en la compresión: " + e.getMessage());
         } finally {
             cleanTempFile(source);
-            cleanTempFile(target);
+            if (!"dev".equalsIgnoreCase(activeProfile)) {
+                cleanTempFile(target);
+            }
         }
     }
 

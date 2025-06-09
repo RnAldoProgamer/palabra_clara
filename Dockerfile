@@ -14,7 +14,7 @@ ARG MAVEN_BASE_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/* /var/tmp/*
 
-# PASO 2: Instalar solo curl y tar (sin FFmpeg por ahora)
+# PASO 2: Instalar solo curl y tar
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl tar && \
     apt-get clean && \
@@ -62,34 +62,29 @@ RUN mvn clean package -DskipTests -B \
     rm -rf /tmp/* /var/tmp/* && \
     find /app -name "*.jar" -not -path "*/target/*" -delete
 
-# Etapa intermedia: Solo para instalar FFmpeg
-FROM openjdk:21-slim AS ffmpeg-stage
-WORKDIR /tmp
-
-# Limpiar completamente
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/* /var/tmp/*
-
-# Instalar FFmpeg con técnica de cache temporal
-RUN apt-get update && \
-    mkdir -p /tmp/apt-cache && \
-    apt-get -o Dir::Cache="/tmp/apt-cache" install -y --no-install-recommends ffmpeg && \
-    rm -rf /tmp/apt-cache && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/* /tmp/* /var/tmp/*
-
 # Etapa final: imagen ligera para ejecución
 FROM openjdk:21-slim
 WORKDIR /app
 
-# Copiar FFmpeg desde la etapa intermedia
-COPY --from=ffmpeg-stage /usr/bin/ffmpeg /usr/bin/ffmpeg
-COPY --from=ffmpeg-stage /usr/bin/ffprobe /usr/bin/ffprobe
+# Instalar curl temporalmente para descargar FFmpeg estático
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl xz-utils && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copiar librerías esenciales de FFmpeg (ajustar según arquitectura)
-COPY --from=ffmpeg-stage /usr/lib/*/libav*.so* /usr/lib/
-COPY --from=ffmpeg-stage /usr/lib/*/libsw*.so* /usr/lib/
-COPY --from=ffmpeg-stage /usr/lib/*/libpostproc*.so* /usr/lib/
+# Descargar FFmpeg estático (mucho más pequeño - ~50MB vs 400MB)
+RUN curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz -o ffmpeg.tar.xz && \
+    tar -xJf ffmpeg.tar.xz && \
+    mv ffmpeg-*-arm64-static/ffmpeg /usr/local/bin/ && \
+    mv ffmpeg-*-arm64-static/ffprobe /usr/local/bin/ && \
+    rm -rf ffmpeg* && \
+    apt-get remove -y curl xz-utils && \
+    apt-get autoremove -y && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Verificar que FFmpeg funciona
+RUN ffmpeg -version
 
 # Copiar el JAR compilado
 COPY --from=build /app/target/*.jar app.jar
@@ -99,11 +94,12 @@ RUN ls -la app.jar
 
 EXPOSE 8080
 
-# JVM optimizada para ARM y 8GB de RAM
+# JVM optimizada para ARM y RAM limitada
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \
-    "-XX:MaxRAMPercentage=75.0", \
+    "-XX:MaxRAMPercentage=60.0", \
     "-XX:+UseG1GC", \
     "-XX:+UseStringDeduplication", \
+    "-XX:G1HeapRegionSize=16m", \
     "-Djava.security.egd=file:/dev/./urandom", \
     "-jar", "app.jar"]

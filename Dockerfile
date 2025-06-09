@@ -1,4 +1,4 @@
-FROM openjdk:21-jdk-alpine AS build
+FROM openjdk:20-jdk-alpine AS build
 WORKDIR /app
 
 ENV LANG C.UTF-8
@@ -24,8 +24,8 @@ COPY pom.xml .
 COPY src/ ./src/
 RUN mvn clean package -DskipTests
 
-# Etapa final: imagen de ejecución con OpenJDK 21 y FFmpeg
-FROM openjdk:21-jdk-alpine
+# Etapa final: imagen de ejecución con OpenJDK 20 y FFmpeg
+FROM openjdk:20-jdk-alpine
 WORKDIR /app
 
 # Instalar FFmpeg

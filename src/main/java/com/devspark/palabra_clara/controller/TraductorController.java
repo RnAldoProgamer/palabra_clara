@@ -63,4 +63,10 @@ public class TraductorController {
     public GenericResponse traducirBraile(@RequestBody String texto){
         return iPalabraService.traducirBraile(texto);
     }
+
+    @GetMapping("/refrescarServidor")
+    public String refrescarServidor() {
+        return "Servidor refrescado correctamente";
+    }
 }
+

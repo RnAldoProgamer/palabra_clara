@@ -10,9 +10,9 @@ ENV LC_ALL=C.UTF-8
 ARG MAVEN_VERSION=3.9.6
 ARG MAVEN_BASE_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries
 
-# Instalar Maven con limpieza inmediata para ahorrar espacio
+# Instalar Maven Y FFmpeg en una sola capa para optimizar espacio
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl tar && \
+    apt-get install -y --no-install-recommends curl tar ffmpeg && \
     curl -fsSL ${MAVEN_BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz -o maven.tar.gz && \
     tar -xzf maven.tar.gz -C /opt && \
     ln -s /opt/apache-maven-${MAVEN_VERSION} /opt/maven && \
@@ -54,12 +54,14 @@ RUN mvn clean package -DskipTests -B \
 FROM openjdk:21-slim
 WORKDIR /app
 
-# Instalar FFmpeg con limpieza específica para Debian
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/*
+# Copiar FFmpeg desde la etapa de build
+COPY --from=build /usr/bin/ffmpeg /usr/bin/ffmpeg
+COPY --from=build /usr/bin/ffprobe /usr/bin/ffprobe
+
+# Copiar las librerías necesarias de FFmpeg
+COPY --from=build /usr/lib/*/libav*.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=build /usr/lib/*/libsw*.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=build /usr/lib/*/libpostproc*.so* /usr/lib/x86_64-linux-gnu/
 
 # Copiar el JAR compilado
 COPY --from=build /app/target/*.jar app.jar

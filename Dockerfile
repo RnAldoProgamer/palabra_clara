@@ -61,30 +61,9 @@ RUN mvn clean package -DskipTests -B \
     rm -rf src && \
     rm -rf /tmp/* /var/tmp/* && \
     find /app -name "*.jar" -not -path "*/target/*" -delete
-
-# Etapa final: imagen ligera para ejecución
+# Etapa final: imagen ligera para ejecución SIN FFMPEG
 FROM openjdk:21-slim
 WORKDIR /app
-
-# Instalar curl temporalmente para descargar FFmpeg estático
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl xz-utils && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Descargar FFmpeg estático (mucho más pequeño - ~50MB vs 400MB)
-RUN curl -L https://johnvansickle.com/ffmpeg/releases/ffmpeg-release-arm64-static.tar.xz -o ffmpeg.tar.xz && \
-    tar -xJf ffmpeg.tar.xz && \
-    mv ffmpeg-*-arm64-static/ffmpeg /usr/local/bin/ && \
-    mv ffmpeg-*-arm64-static/ffprobe /usr/local/bin/ && \
-    rm -rf ffmpeg* && \
-    apt-get remove -y curl xz-utils && \
-    apt-get autoremove -y && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-# Verificar que FFmpeg funciona
-RUN ffmpeg -version
 
 # Copiar el JAR compilado
 COPY --from=build /app/target/*.jar app.jar
@@ -100,6 +79,4 @@ ENTRYPOINT ["java", \
     "-XX:MaxRAMPercentage=60.0", \
     "-XX:+UseG1GC", \
     "-XX:+UseStringDeduplication", \
-    "-XX:G1HeapRegionSize=16m", \
-    "-Djava.security.egd=file:/dev/./urandom", \
     "-jar", "app.jar"]

@@ -1,69 +1,58 @@
-# Etapa de construcción: usar OpenJDK 21 y descargar Maven 3.9.2 manualmente
-FROM openjdk:21-slim AS build
+# Usar imagen base con Maven preinstalado para ahorrar espacio
+FROM maven:3.9.2-eclipse-temurin-21-alpine AS build
 WORKDIR /app
 
-# Usar formato recomendado para ENV
-ENV LANG=C.UTF-8
-ENV LC_ALL=C.UTF-8
+# Configurar Maven para usar menos memoria y espacio
+ENV MAVEN_OPTS="-Xmx256m -XX:MaxMetaspaceSize=64m -Dmaven.repo.local=/tmp/.m2"
 
-# Variables para Maven
-ARG MAVEN_VERSION=3.9.2
-ARG MAVEN_BASE_URL=https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries
-
-# Instalar dependencias, descargar y descomprimir Maven en una sola capa
-RUN apt-get update && apt-get install -y curl tar && \
-    curl -fsSL ${MAVEN_BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz -o maven.tar.gz && \
-    tar -xzf maven.tar.gz -C /opt && \
-    ln -s /opt/apache-maven-${MAVEN_VERSION} /opt/maven && \
-    rm maven.tar.gz && \
-    apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
-
-ENV MAVEN_HOME=/opt/maven
-ENV PATH=$MAVEN_HOME/bin:$PATH
-
-# Copiar solo pom.xml primero para aprovechar cache de Docker
+# Copiar solo pom.xml y descargar dependencias críticas
 COPY pom.xml .
 
-# Descargar dependencias por separado (aprovecha cache de Docker)
-RUN mvn dependency:go-offline -B
+# Intentar descargar dependencias con configuración minimal
+RUN mvn dependency:resolve -B -DexcludeTransitive=false || true
 
 # Copiar código fuente
 COPY src/ ./src/
 
-# Compilar con configuraciones de memoria limitada y limpiar cache
-RUN MAVEN_OPTS="-Xmx512m -XX:MaxMetaspaceSize=128m" mvn clean package -DskipTests -B && \
-    rm -rf ~/.m2/repository && \
-    rm -rf /tmp/* /var/tmp/*
+# Compilar con configuración mínima y limpieza inmediata
+RUN mvn clean package -DskipTests -B -Dcheckstyle.skip=true -Dpmd.skip=true -Dspotbugs.skip=true && \
+    ls -la target/ && \
+    rm -rf /tmp/.m2 && \
+    rm -rf ~/.m2 && \
+    rm -rf /app/src && \
+    rm -rf /tmp/* && \
+    find /app/target -name "*.jar" -not -name "*-sources.jar" -not -name "*-javadoc.jar"
 
-# Etapa final: imagen de ejecución más liviana
+# Etapa final: imagen mínima
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
-# Crear usuario no-root para seguridad
+# Instalar FFmpeg de forma mínima
+RUN apk add --no-cache ffmpeg && \
+    rm -rf /var/cache/apk/* && \
+    rm -rf /tmp/*
+
+# Crear usuario no-root
 RUN addgroup -g 1001 -S appuser && \
     adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G appuser appuser
 
-# Instalar solo FFmpeg con limpieza agresiva
-RUN apk update && \
-    apk add --no-cache ffmpeg && \
-    rm -rf /var/cache/apk/*
-
-# Copiar el archivo JAR construido
+# Copiar solo el JAR principal
 COPY --from=build /app/target/*.jar app.jar
 
-# Cambiar ownership del archivo
-RUN chown appuser:appuser app.jar
+# Verificar que el JAR existe
+RUN ls -la app.jar && chown appuser:appuser app.jar
 
-# Cambiar a usuario no-root
 USER appuser
 
 EXPOSE 8080
 
-# Usar configuraciones de JVM optimizadas para contenedores
+# JVM optimizada para contenedores con poca memoria
 ENTRYPOINT ["java", \
     "-XX:+UseContainerSupport", \
-    "-XX:MaxRAMPercentage=75.0", \
-    "-XX:+UseG1GC", \
-    "-XX:+UseStringDeduplication", \
+    "-XX:InitialRAMPercentage=50.0", \
+    "-XX:MaxRAMPercentage=80.0", \
+    "-XX:+UseSerialGC", \
+    "-Xss256k", \
+    "-XX:MaxMetaspaceSize=64m", \
     "-Djava.security.egd=file:/dev/./urandom", \
     "-jar", "app.jar"]

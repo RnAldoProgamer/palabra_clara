@@ -21,24 +21,50 @@ RUN apt-get update && apt-get install -y curl tar && \
 ENV MAVEN_HOME=/opt/maven
 ENV PATH=$MAVEN_HOME/bin:$PATH
 
-# Copiar archivos del proyecto y compilar
-COPY pom.xml . 
-COPY src/ ./src/
-RUN mvn clean package -DskipTests && \
-    rm -rf ~/.m2/repository
+# Copiar solo pom.xml primero para aprovechar cache de Docker
+COPY pom.xml .
 
-# Etapa final: imagen de ejecución con OpenJDK 21 y FFmpeg
-FROM openjdk:21-jdk-slim
+# Descargar dependencias por separado (aprovecha cache de Docker)
+RUN mvn dependency:go-offline -B
+
+# Copiar código fuente
+COPY src/ ./src/
+
+# Compilar con configuraciones de memoria limitada y limpiar cache
+RUN MAVEN_OPTS="-Xmx512m -XX:MaxMetaspaceSize=128m" mvn clean package -DskipTests -B && \
+    rm -rf ~/.m2/repository && \
+    rm -rf /tmp/* /var/tmp/*
+
+# Etapa final: imagen de ejecución más liviana
+FROM openjdk:21-jre-slim
 WORKDIR /app
 
-# Instalar FFmpeg con limpieza agresiva para ahorrar espacio
+# Crear usuario no-root para seguridad
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Instalar solo FFmpeg con limpieza agresiva
 RUN apt-get update && \
     apt-get install -y --no-install-recommends ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archives/*
+    apt-get autoremove -y && \
+    apt-get autoclean && \
+    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archives/* /var/cache/apt/*.bin
 
-# Copiar el archivo JAR construido en la etapa de construcción
+# Copiar el archivo JAR construido
 COPY --from=build /app/target/*.jar app.jar
 
+# Cambiar ownership del archivo
+RUN chown appuser:appuser app.jar
+
+# Cambiar a usuario no-root
+USER appuser
+
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Usar configuraciones de JVM optimizadas para contenedores
+ENTRYPOINT ["java", \
+    "-XX:+UseContainerSupport", \
+    "-XX:MaxRAMPercentage=75.0", \
+    "-XX:+UseG1GC", \
+    "-XX:+UseStringDeduplication", \
+    "-Djava.security.egd=file:/dev/./urandom", \
+    "-jar", "app.jar"]

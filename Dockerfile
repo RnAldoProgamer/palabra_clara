@@ -36,18 +36,17 @@ RUN MAVEN_OPTS="-Xmx512m -XX:MaxMetaspaceSize=128m" mvn clean package -DskipTest
     rm -rf /tmp/* /var/tmp/*
 
 # Etapa final: imagen de ejecución más liviana
-FROM openjdk:21-jre-slim
+FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 
 # Crear usuario no-root para seguridad
-RUN groupadd -r appuser && useradd -r -g appuser appuser
+RUN addgroup -g 1001 -S appuser && \
+    adduser -S -D -H -u 1001 -h /app -s /sbin/nologin -G appuser appuser
 
 # Instalar solo FFmpeg con limpieza agresiva
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends ffmpeg && \
-    apt-get autoremove -y && \
-    apt-get autoclean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /var/cache/apt/archives/* /var/cache/apt/*.bin
+RUN apk update && \
+    apk add --no-cache ffmpeg && \
+    rm -rf /var/cache/apk/*
 
 # Copiar el archivo JAR construido
 COPY --from=build /app/target/*.jar app.jar

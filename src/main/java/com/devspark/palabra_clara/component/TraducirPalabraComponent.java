@@ -16,7 +16,7 @@ public class TraducirPalabraComponent {
     @Value("${spring.profiles.active:dev}")
     private String activeProfile;
 
-    @Value("${groq.api.key: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}")
+    @Value("${groq.api.key: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}")
     private String groqApiKey;
 
     @Value("${groq.api.url:https://api.groq.com/openai/v1/chat/completions}")
